@@ -5,6 +5,9 @@ date: "`r Sys.Date()`"
 output:
   html_document:
     highlight: tango   # for line numbering to work
+editor_options: 
+  markdown: 
+    wrap: 72
 ---
 
 # Description of Problem
@@ -15,7 +18,10 @@ output:
 
 # Data Preparation
 
-The cell below was run only once to unpack the reviews data from a .gz compressed folder. The code cell unpacked the data and directly deleted the compressed files.
+The cell below was run only once to unpack the reviews data from a .gz
+compressed folder. The code cell unpacked the data and directly deleted
+the compressed files.
+
 ```{r, eval=FALSE}
 library(R.utils)
 gunzip("Data/reviews.csv.gz")
@@ -34,14 +40,129 @@ merged <- left_join(x = listings, y = reviews, by)
 merged
 ```
 
-
-# Data Visualization / $tory
+# Data Visualization / Story
 
 # Model
 
 # Chapter of choice
 
-# Conclusions & Limitations
+# Conclusions
+
+# Potential Limitations
 
 # GenAI
+
+# Requirements
+
+We cross them as soon as fulfilled:
+
+Two or more data sets which need to be joined/merged
+
+**First data set:**
+
+At least few hundred of observations
+
+At least dozen variables
+
+Numeric and categorical variables
+
+Dates ( YYYY-MM-DD) or geographic locations, both are even better
+
+**Second data set:**
+
+Can be simple
+
+Join the two data sets and highlight in your report where you have done
+this, showing the line of code where the joining is performed
+
+Ideally different formats and different sources
+
+**Content** Comprehensive analysis which we will present to a hypothetical
+client
+
+In depth examination of problem being adressed
+
+PDF or HTML with Rmarkdwon or quarto
+
+Clear and comprehensible to all readers
+
+**Prepare the data for the analysis** Cleaned before they are merged and
+analysis begins
+
+You can hide code but highlight in the text where the data is merged
+
+Please explain in words (not as code) what you have done for data
+preparation
+
+**Visualize the data appropiately**
+Analyse data using summary statistics
+
+Graphs
+
+*Recommendations for plots*
+No pie charts
+
+Alpha level to add transparency to points /lines
+
+Not to many stacked bar plots, or not at all (instead maybe line plots)
+
+Show entire range of values, without zooming too much
+
+Same scale on axes
+
+Shall all observations and infos, not just mean and standard deviation
+
+Not too many dimensions in a graph
+
+**Fit the model**
+Fit a model and show result + interpet it
+
+Produce graphs (e.g. predictions or residual diagnostics) for your model fits
+
+Possibility: compare several models via CV
+
+**Chapter of choice**
+Use new package that was not mentioned in the main part of the course (cant be data
+manipulation, visualisation using ggplot2, regular expressions and reporting using Rmarkdown does not count and perform a task that we have not discussed in the course
+
+No new statistical or machine learning method
+
+Method to prepare or display data
+
+**Generative AI**
+Quarter to half a page about which tools you have used
+
+What have you used it for? For what kind of tasks turned they out to be
+helpful?
+
+How do you check correctness of the answer?
+
+What did not work?
+
+**Sell the story**
+Complete, easy to read, thread (what are you doing, why, conclusions, interpretations, overview . . . )
+
+• Source of the data.
+• Objectives and hypotheses of the analysis.
+• Interpretation of each step.
+• Conclusions drawn from the analysis.
+• Potential limitations of the study.
+
+**Comments**
+Comment a lot
+
+Check coding style
+
+**Additional requirements**
+a readme.txt file;
+
+structured folders (e.g. “Data”, “Scripts”, . . . )
+
+the data set analysed
+
+the Rmarkdown file (.Rmd) (or quarto file)
+
+the PDF or HTML output file
+
+not more than 25 pages
 
