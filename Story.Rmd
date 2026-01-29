@@ -7,7 +7,13 @@ output:
     highlight: tango   # for line numbering to work
 ---
 
+# Description of Problem
 
+# Source of Data
+
+# Objective and hypothesis of analysis
+
+# Data Preparation
 
 The cell below was run only once to unpack the reviews data from a .gz compressed folder. The code cell unpacked the data and directly deleted the compressed files.
 ```{r, eval=FALSE}
@@ -27,4 +33,15 @@ by <- join_by(id == listing_id)
 merged <- left_join(x = listings, y = reviews, by)
 merged
 ```
+
+
+# Data Visualization / $tory
+
+# Model
+
+# Chapter of choice
+
+# Conclusions & Limitations
+
+# GenAI
 
