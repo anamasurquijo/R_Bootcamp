@@ -9,8 +9,11 @@ output:
 
 
 
-
+The cell below was run only once to unpack the reviews data from a .gz compressed folder. The code cell unpacked the data and directly deleted the compressed files.
 ```{r, eval=FALSE}
 library(R.utils)
 gunzip("Data/reviews.csv.gz")
 ```
+
+
+
