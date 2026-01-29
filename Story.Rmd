@@ -15,5 +15,16 @@ library(R.utils)
 gunzip("Data/reviews.csv.gz")
 ```
 
+```{r}
+library(readr)
+library(dplyr)
 
+listings <- read_csv("Data/listings.csv")
+
+reviews <- read_csv("Data/reviews.csv")
+
+by <- join_by(id == listing_id)
+merged <- left_join(x = listings, y = reviews, by)
+merged
+```
 
