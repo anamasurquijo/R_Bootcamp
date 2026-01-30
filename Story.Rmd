@@ -4,16 +4,19 @@ author: "Ana Mas Urquijo, Azeglio Martinelli"
 date: "`r Sys.Date()`"
 output:
   html_document:
+    highlight: tango
     number_sections: true
     toc: true               # table of contents
     toc_depth: 3            # heading levels displayed
     toc_float:
       collapsed: false      # toc in panel on the left
       smooth_scroll: true   # scroll instead of jump
-# do we need this? highlight: tango   # for line numbering to work
-editor_options: 
-  markdown: 
-    wrap: 72
+      
+    
+```{r knitr-setup, include = FALSE}
+library(knitr)
+opts_chunk$set(echo = FALSE, include = FALSE)
+```
 ---
 
 # Description of Problem
@@ -21,6 +24,8 @@ editor_options:
 # Source of Data
 
 # Objective and hypothesis of analysis
+
+
 
 # Data Preparation
 
