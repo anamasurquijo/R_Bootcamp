@@ -4,16 +4,19 @@ author: "Ana Mas Urquijo, Azeglio Martinelli"
 date: "`r Sys.Date()`"
 output:
   html_document:
+    highlight: tango
     number_sections: true
     toc: true               # table of contents
     toc_depth: 3            # heading levels displayed
     toc_float:
       collapsed: false      # toc in panel on the left
       smooth_scroll: true   # scroll instead of jump
-# do we need this? highlight: tango   # for line numbering to work
-editor_options: 
-  markdown: 
-    wrap: 72
+      
+    
+```{r knitr-setup, include = FALSE}
+library(knitr)
+opts_chunk$set(echo = FALSE, include = FALSE)
+```
 ---
 
 # Description of Problem
@@ -36,14 +39,68 @@ gunzip("Data/reviews.csv.gz")
 ```{r}
 library(readr)
 library(dplyr)
+library(tidyr)
 
-listings <- read_csv("Data/listings.csv")
+d.listings <- read_csv("Data/listings.csv")
+d.reviews <- read_csv("Data/reviews.csv")
 
-reviews <- read_csv("Data/reviews.csv")
+# missing data in each column
+colSums(is.na(d.listings))
+# percentage of missing data
+colMeans(is.na(d.listings))
 
+# drop column license as it contains only NA values
+d.listings <- d.listings %>% 
+  select(-license)
+
+# replace NA's in other columns so that we have valid values for analysis (except for last_review because here it does not make sense to enter a somewhat valid date for NA values)
+d.listings <- d.listings %>% 
+  replace_na(list(price = 0, reviews_per_month = 0))
+
+# same checks for reviews and replace NA's
+colSums(is.na(d.reviews))
+colMeans(is.na(d.reviews))
+
+d.reviews <- d.reviews %>% 
+  replace_na(list(comments = 'Unkown'))
+
+# Check for duplicate Id's in listings
+d.listings %>%
+  add_count(id) %>%
+  filter(n>1) %>%
+  distinct()
+
+```
+
+
+
+
+
+```{r}
 by <- join_by(id == listing_id)
-merged <- left_join(x = listings, y = reviews, by)
-merged
+
+d.merged <- d.listings %>%
+  left_join(d.reviews, by = by)
+
+# Sanity checks for merge
+
+# Check number of matches where join columns of reviews are NA
+d.merged %>%
+  summarise(
+    total = n(),
+    unmatched = sum(is.na(id.y))
+  )
+
+# anti_join to inspect any mismatches
+anti_join(listings, reviews, by = c("id" = "listing_id")) |>
+  View()
+
+# Upon closer inspection wiht the View() it is evident that all the non matched columns are because they do not have a review and therefore no listing_id to match (because column last_review is all NA's).
+
+# rename different review columns
+d.merged <- d.merged %>% 
+  rename(review_id = id.y, review_date = date)
+
 ```
 
 # Data Visualization / Story
