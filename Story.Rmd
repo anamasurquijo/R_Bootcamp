@@ -11,19 +11,27 @@ output:
     toc_float:
       collapsed: false      # toc in panel on the left
       smooth_scroll: true   # scroll instead of jump
-      
-    
-```{r knitr-setup, include = FALSE}
-library(knitr)
-opts_chunk$set(echo = FALSE, include = FALSE)
-```
 ---
 
-# Description of Problem
+```{r knitr-setup, include = FALSE}
+library(knitr)
+opts_chunk$set(
+  echo = FALSE,       # do not display R code
+  include = TRUE,     # display R result
+  message = FALSE,
+  warning = FALSE,
+  error = FALSE
+  
+  )
+```
 
-# Source of Data
+#Introduction
 
-# Objective and hypothesis of analysis
+## Description of Problem
+
+## Source of Data
+
+## Objective and hypothesis of analysis
 
 
 
