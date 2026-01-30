@@ -1,5 +1,5 @@
 ---
-title: "Analysis of AirBnB's in Zurich City"
+title: "Evaluating the Role of Airbnb in Zurich’s Neighbourhoods"
 author: "Ana Mas Urquijo, Azeglio Martinelli"
 date: "`r Sys.Date()`"
 output:
@@ -11,20 +11,72 @@ output:
     toc_float:
       collapsed: false      # toc in panel on the left
       smooth_scroll: true   # scroll instead of jump
-      
-    
-```{r knitr-setup, include = FALSE}
-library(knitr)
-opts_chunk$set(echo = FALSE, include = FALSE)
-```
 ---
 
-# Description of Problem
+```{r knitr-setup, include = FALSE}
+library(knitr)
+opts_chunk$set(
+  echo = FALSE,       # do not display R code
+  include = TRUE,     # display R result
+  message = FALSE,
+  warning = FALSE,
+  error = FALSE
+  
+  )
+```
 
-# Source of Data
+# Introduction
 
-# Objective and hypothesis of analysis
+Zurich is widely recognised as one of the most constrained housing markets in Switzerland. Strong population growth, limited land availability, and a persistently low vacancy rate have made access to long-term rental housing increasingly difficult. For many residents, the process of finding an apartment involves long waiting lists and crowded viewings, reflecting the intense competition for available housing. Ensuring sufficient long-term housing supply has therefore become a key policy challenge for the city.
 
+At the same time, short-term rental platforms such as Airbnb have expanded significantly in Zurich over the past decade. These platforms offer flexible accommodation options for tourists and business travellers and can provide additional income opportunities for residents. However, when residential units are offered frequently or on a year-round basis as short-term rentals, they may reduce the availability of housing for long-term residents. This potential trade-off between tourism demand and housing supply has sparked increasing public debate.
+
+In response to similar challenges, several Swiss cities and cantons have introduced regulatory measures aimed at limiting the intensity of short-term rentals. One commonly discussed instrument is a cap on the number of nights per year that a dwelling may be rented to tourists, such as a limit of 90 nights annually. The City of Zurich is currently considering whether comparable regulations would be appropriate and how such measures could be implemented in a targeted and proportionate way.
+
+Importantly, the role of Airbnb is unlikely to be uniform across the city. In some neighbourhoods, short-term rentals may complement existing accommodation infrastructure, particularly where hotel capacity is limited. In other areas, a high concentration of listings or hosts managing multiple properties may indicate a more commercial use of residential housing. At the same time, guest reviews and booking activity provide insight into whether Airbnb listings deliver positive experiences for visitors, which is a relevant consideration for tourism policy.
+
+This analysis is conducted for a hypothetical client, the City of Zurich, with the objective of evaluating the role of Airbnb across Zurich neighbourhoods. Using publicly available data, the study examines spatial patterns of listings, host concentration, rental intensity, and guest experiences. The overarching goal is to assess where short-term rentals appear to complement the city’s housing and tourism landscape and where targeted regulatory measures may be justified.
+
+# Data Sources
+
+The analysis is based on publicly available data from **Inside Airbnb** ([https://insideairbnb.com/get-the-data/](https://insideairbnb.com/get-the-data/)), an independent, non-commercial project that provides detailed information on Airbnb listings in cities around the world. The platform compiles data directly from Airbnb’s website and aims to support research and policy discussions around short-term rentals.
+
+Two datasets for the city of Zurich are used in this study:
+
+1. **Listings dataset**
+   This dataset contains detailed information on individual Airbnb listings, including their location, room type, price, availability, minimum stay requirements, and host characteristics. It also includes variables such as the number of listings per host and whether a listing is associated with a license.
+
+2. **Reviews dataset**
+   This dataset contains information on guest reviews, including review dates and the number of reviews over time. It allows for an assessment of demand dynamics and guest experiences across listings and neighbourhoods.
+
+The two datasets are merged using the unique listing identifier. This combined dataset enables a joint analysis of spatial distribution, host behaviour, usage intensity, and guest feedback. All data preparation steps, including cleaning and merging, are documented and highlighted in the analysis to ensure full reproducibility.
+
+
+# Objectives and Research Questions
+
+The main objective of this analysis is to support the City of Zurich in evaluating whether, and where, regulatory measures on short-term rentals may be appropriate. Rather than treating Airbnb as a uniform phenomenon, the analysis focuses on neighbourhood-level differences and host behaviour.
+
+Specifically, the study addresses the following research questions:
+
+**RQ1:**
+How are Airbnb listings distributed across Zurich neighbourhoods, and which areas show the highest concentration of short-term rentals?
+
+**RQ2:**
+Are Airbnb listings more prevalent in certain neighbourhoods, suggesting that short-term rentals may complement local accommodation needs rather than displace long-term housing?
+
+**RQ3:**
+To what extent is Airbnb activity in Zurich driven by a small number of hosts offering multiple listings, indicating a more commercial use of residential properties?
+
+**RQ4:**
+Which neighbourhoods exhibit high short-term rental intensity, as reflected by listing availability throughout the year and minimum stay requirements?
+
+**RQ5:**
+Do guest reviews suggest that Airbnb listings in Zurich provide positive tourist experiences, and does this vary across neighbourhoods or host types?
+
+**RQ6:**
+Based on listing concentration, host behaviour, and usage intensity, which neighbourhoods would be most affected by potential regulatory measures on short-term rentals?
+
+Together, these questions provide a structured framework for assessing the role of Airbnb in Zurich and for identifying areas where targeted regulation may be most relevant.
 
 
 # Data Preparation
