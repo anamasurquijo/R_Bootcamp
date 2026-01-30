@@ -35,6 +35,13 @@ the compressed files.
 library(R.utils)
 gunzip("Data/reviews.csv.gz")
 ```
+First, the listings and reviews datasets are imported from CSV files using read_csv and stored as d.listings and d.reviews. After loading the listings data, the amount of missing data is examined by calculating both the absolute number of missing values in each column and the proportion of missing values relative to the total number of observations. This provides an overview of data completeness and helps identify variables that may require cleaning or removal.
+
+Based on this inspection, the column license is removed from the listings dataset because it contains only missing values and therefore provides no usable information for the analysis. The remaining missing values in selected numeric variables are then addressed by replacing NA values with zeros for price and reviews_per_month, ensuring that these variables contain valid numeric values and can be used in subsequent analyses. The last_review variable is intentionally left unchanged, as imputing a date where none exists would not be meaningful.
+
+The same missing-data diagnostics are then applied to the reviews dataset by again calculating the number and proportion of missing values in each column. Missing values in the comments column are replaced with the string "Unknown" so that all review records contain a valid text entry and can be processed consistently.
+
+Finally, the listings dataset is checked for duplicate listing identifiers. This is done by counting how often each id appears, filtering for those that occur more than once, and displaying only the distinct duplicated entries. This step verifies whether the primary key in the listings data is unique, which is important for reliable joins and further analysis.
 
 ```{r}
 library(readr)
@@ -72,8 +79,15 @@ d.listings %>%
 
 ```
 
+In the next cell below, the two data sets were merged.
 
+First, a join condition is explicitly defined to link the two datasets by matching the id column in the listings data with the listing_id column in the reviews data. Using this condition, the cleaned listings dataset is merged with the reviews dataset using a left join, ensuring that all listings are retained in the merged dataset while review information is added where a matching review exists.
 
+After performing the merge, sanity checks are carried out to assess whether the join behaved as expected. The total number of rows in the merged dataset is computed and compared with the number of rows in the listings data. In addition, the number of unmatched rows is calculated by counting how many entries have missing values in the review identifier column, indicating listings for which no corresponding review record was found.
+
+To further investigate unmatched cases, an anti-join is performed between the listings and reviews datasets. This operation returns only those listings that do not have a matching review. The result is inspected manually using the View() function, allowing a detailed examination of all columns. This inspection confirms that the unmatched entries correspond to listings without any reviews, which explains the absence of a matching listing_id in the reviews data, particularly given that the last_review field contains only missing values for these cases.
+
+Finally, to improve clarity and avoid ambiguity in the merged dataset, review-related columns are renamed. The review identifier column originating from the reviews table is renamed to review_id, and the review date column is renamed to review_date, making the structure and meaning of the merged data clearer for subsequent analysis.
 
 
 ```{r}
@@ -82,7 +96,7 @@ by <- join_by(id == listing_id)
 d.merged <- d.listings %>%
   left_join(d.reviews, by = by)
 
-# Sanity checks for merge
+# Sanity checks for merge below
 
 # Check number of matches where join columns of reviews are NA
 d.merged %>%
@@ -95,7 +109,7 @@ d.merged %>%
 anti_join(listings, reviews, by = c("id" = "listing_id")) |>
   View()
 
-# Upon closer inspection wiht the View() it is evident that all the non matched columns are because they do not have a review and therefore no listing_id to match (because column last_review is all NA's).
+# Upon closer, manual inspection wiht the View() it is evident that all the non matched columns exist because they do not have a review and therefore no listing_id to match (because column last_review is all NA's).
 
 # rename different review columns
 d.merged <- d.merged %>% 
