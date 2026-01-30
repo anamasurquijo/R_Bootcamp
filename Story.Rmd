@@ -4,7 +4,13 @@ author: "Ana Mas Urquijo, Azeglio Martinelli"
 date: "`r Sys.Date()`"
 output:
   html_document:
-    highlight: tango   # for line numbering to work
+    number_sections: true
+    toc: true               # table of contents
+    toc_depth: 3            # heading levels displayed
+    toc_float:
+      collapsed: false      # toc in panel on the left
+      smooth_scroll: true   # scroll instead of jump
+# do we need this? highlight: tango   # for line numbering to work
 editor_options: 
   markdown: 
     wrap: 72
@@ -51,6 +57,16 @@ merged
 # Potential Limitations
 
 # GenAI
+
+Ideas of questions to answer:
+
+**What have you used it for?**
+
+**For what kind of tasks turned they out to be helpful?**
+
+**How do you check correctness of the answer?**
+
+**What did not work?**
 
 # Requirements
 
