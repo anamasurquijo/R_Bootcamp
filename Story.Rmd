@@ -378,13 +378,73 @@ leaflet(airbnb_listings) %>%
 
 ```
 
+```{r}
 
+neg_stats <- d.merged %>%
+  filter(bing_score == -1) %>%
+  group_by(neighbourhood) %>%
+  summarise(
+    n_negative_reviews = n(),
+    .groups = "drop"
+  )
+
+all_stats <- d.merged %>%
+  group_by(neighbourhood) %>%
+  summarise(
+    n_reviews = n(),
+    .groups = "drop"
+  )
+
+neg_stats <- neg_stats %>%
+  left_join(all_stats, by = "neighbourhood") %>%
+  mutate(
+    share_negative = n_negative_reviews / n_reviews
+  )
+
+geo_neg <- geojson %>%
+  left_join(neg_stats, by = "neighbourhood")
+
+p_count <- ggplot(geo_neg) +
+  geom_sf(aes(fill = n_negative_reviews), color = "white", linewidth = 0.2) +
+  scale_fill_viridis_c(
+    option = "plasma",
+    na.value = "grey90",
+    name = "Negative reviews"
+  ) +
+  labs(
+    title = "Number of negative reviews per neighbourhood",
+    subtitle = "Darker areas have more negative reviews"
+  ) +
+  theme_minimal()
+
+p_share <- ggplot(geo_neg) +
+  geom_sf(aes(fill = share_negative), color = "white", linewidth = 0.2) +
+  scale_fill_viridis_c(
+    option = "plasma",
+    na.value = "grey90",
+    labels = scales::percent_format(accuracy = 1),
+    name = "% negative"
+  ) +
+  labs(
+    title = "Share of negative reviews per neighbourhood",
+    subtitle = "Fraction of reviews with bing_score = -1"
+  ) +
+  theme_minimal()
+
+p_count + p_share + plot_annotation(
+  title = "Negative Airbnb reviews in Zürich by neighbourhood"
+)
+
+
+```
 
 
 
 ```{r}
 
-map_stats
+negative_reviews %>%
+  select(review_id, review_date, comments) %>%
+  View()
 
 
 ```
