@@ -40,7 +40,7 @@ First, the listings and reviews datasets are imported from CSV files using read_
 
 Based on this inspection, the column license is removed from the listings dataset because it contains only missing values and therefore provides no usable information for the analysis. The remaining missing values in selected numeric variables are then addressed by replacing NA values with zeros for price and reviews_per_month, ensuring that these variables contain valid numeric values and can be used in subsequent analyses. The last_review variable is intentionally left unchanged, as imputing a date where none exists would not be meaningful.
 
-The same missing-data diagnostics are then applied to the reviews dataset by again calculating the number and proportion of missing values in each column. Missing values in the comments column are replaced with the string "Unknown" so that all review records contain a valid text entry and can be processed consistently. Afterwards, all non-english comments are deleted. It is explained in the next section why this was done.
+The same missing-data diagnostics are then applied to the reviews dataset by again calculating the number and proportion of missing values in each column. Missing values in the comments column are replaced with the string "Unknown" so that all review records contain a valid text entry and can be processed consistently. Afterwards, all non-English comments are deleted. It is explained in the next section why this was done.
 
 Finally, the listings dataset is checked for duplicate listing identifiers. This is done by counting how often each id appears, filtering for those that occur more than once, and displaying only the distinct duplicated entries. This step verifies whether the primary key in the listings data is unique, which is important for reliable joins and further analysis.
 
@@ -73,7 +73,7 @@ colMeans(is.na(d.reviews))
 d.reviews <- d.reviews %>% 
   replace_na(list(comments = 'Unkown'))
 
-# filter out non-english comments
+# filter out non-English comments
 d.reviews_eng <- d.reviews %>%
   mutate(
     detected_language = detect_language(comments)
@@ -130,8 +130,17 @@ d.merged <- d.merged %>%
 ```
 
 
+# Chapter of choice / Sentiment Analysis
 
-# Chapter of choice
+For the chapter of choice, a Sentiment Analysis on the comment is done to augment the merged dataset with a sentiment score. This is the reason why all non-English comments were deleted in the Data Preparation section because the Sentiment Analysis employed can only handle English text and all non-English text is assigned with negative scores even if the comment itself is very positive.
+
+First, we start be creating a reduced data frame that contains only the review identifier and the associated review text. Then, the following text preprocessing steps are done on this comments data frame. All comments are converted to lowercase to ensure that words differing only by capitalization are treated as the same token during analysis. After that, all punctuation is removed so that it does no interfere with word matching in the sentiment lexicon.
+
+With the preprocessing done, the comments are tokenized. Meaning each comment is first split into individiual words, with one word per row, to allow for easier analysis of the data frame. Of course, review_id is kept to later aggregate back to comment level. 
+
+The Bing sentiment lexicon is then loaded. With this lexicon, the tokenized words are catgorized in a binary fashion, either positive or negative. The tokenized words are joined with this lexicon so that only words appearing in the sentiment dictionary are retained and assigned a corresponding sentiment. Next, the sentiment information is aggregated at the comment level. The categorization of each word is safed into one of two columns, either 'n_positive' or 'n_negative', as counts. These counts are then assigned a score of 1 if the comment contains more positive than negative words, -1 for the opposite case and 0 if the numbers are equal, indicating a neutral comment. 
+
+Lastly, the sentiment score columns are merged with the original 'd.merged' dataset on the review identifier using a left join. Any reviews that did not contain words found in the bing lexicon are assigned a neutral score of 0. This is done so that the score column contains no empty values. The result is the original dataset being augmented with a sentiment score for each review that reflects its overall tone and can be used for visualizations.
 
 ```{r}
 
@@ -144,7 +153,6 @@ library(textdata)
 
 comments_df <- d.merged %>%
   select(review_id, comments)
-
 
 # Preprocess data; important for effective sentiment analysis
 
@@ -159,7 +167,6 @@ comments_df <- comments_df %>%
 # Tokenize into one word per row; review_id is kept automatically
 text_words <- comments_df %>%
   unnest_tokens(word, comments)
-
 
 bing <- get_sentiments("bing")
 
@@ -188,7 +195,6 @@ d.merged <- d.merged %>%
   mutate(
     bing_score = if_else(is.na(bing_score), 0L, bing_score)
   )
-
 
 ```
 
