@@ -343,6 +343,47 @@ p_price + p_stays + plot_annotation(title = "Neighbourhood Groups in Zürich")
 
 ```{r}
 
+library(dplyr)
+library(leaflet)
+
+airbnb_listings <- d.merged %>%
+  distinct(id, .keep_all = TRUE)
+
+# Check that lat/lon look ok (optional)
+summary(airbnb_listings$latitude)
+summary(airbnb_listings$longitude)
+
+# Basic leaflet map with basemap + all points
+leaflet(airbnb_listings) %>%
+  # tile layer with streets etc. 
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  
+  # each Airbnb as a point with information
+  addCircleMarkers(
+    lng = ~longitude,
+    lat = ~latitude,
+    radius = 3,
+    stroke = FALSE,
+    fillOpacity = 0.6,
+    color = "#FF5733",
+    clusterOptions = markerClusterOptions(),
+    popup = ~paste0(
+      "<b>", name, "</b><br/>",
+      "Room type: ", room_type, "<br/>",
+      "Price: ", price, " CHF<br/>",
+      "Neighbourhood: ", neighbourhood
+    )
+  )
+
+
+```
+
+
+
+
+
+```{r}
+
 map_stats
 
 
