@@ -301,6 +301,55 @@ for (g in radar_scaled$neighbourhood_group) {
 
 ```
 
+```{r}
+
+library(sf)
+library(patchwork)
+
+geojson <- st_read("Data/neighbourhoods.geojson")
+
+map_stats <- d.merged %>%
+  group_by(neighbourhood_group) %>%
+  summarise(
+    avg_price    = mean(price, na.rm = TRUE),
+    total_stays  = sum(number_of_reviews, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+geo_stats <- geojson %>%
+  left_join(map_stats, by = "neighbourhood_group")
+
+p_price <- ggplot(geo_stats) +
+  geom_sf(aes(fill = avg_price), color = "white", linewidth = 0.2) +
+  scale_fill_viridis_c(option = "magma") +
+  labs(
+    title = "Average price by neighbourhood group",
+    fill  = "Avg. price"
+  ) +
+  theme_minimal()
+
+p_stays <- ggplot(geo_stats) +
+  geom_sf(aes(fill = total_stays), color = "white", linewidth = 0.2) +
+  scale_fill_viridis_c(option = "magma", trans = "sqrt") +
+  labs(
+    title = "Number of stays (reviews) by neighbourhood group",
+    fill  = "Total stays"
+  ) +
+  theme_minimal()
+
+p_price + p_stays + plot_annotation(title = "Neighbourhood Groups in Zürich")
+
+```
+
+```{r}
+
+map_stats
+
+
+```
+
+
+
 
 # Model
 
