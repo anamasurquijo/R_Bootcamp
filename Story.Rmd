@@ -210,6 +210,16 @@ d.merged %>%
 
 # Data Visualization / Story
 
+
+
+```{r}
+library(ggplot2)
+
+
+
+```
+
+
 # Model
 
 # Conclusions
