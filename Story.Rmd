@@ -214,8 +214,28 @@ d.merged %>%
 
 ```{r}
 library(ggplot2)
+library(treemapify)
 
-
+ggplot(
+  data,
+  aes(
+    area  = value,
+    fill  = room_type,
+    label = sprintf("%s\n%d", room_type, value)
+  )
+) +
+  geom_treemap() +
+  geom_treemap_text(place = "centre", size = 12) +
+  scale_fill_manual(
+    values = c(
+      "Entire home/apt" = "#08519c",
+      "Private room"    = "#4292c6",
+      "Shared room"     = "#9ecae1",
+      "Hotel room"      = "#deebf7"
+    ),
+    drop = FALSE
+  ) +
+  labs(title = "Room types (Listings)")
 
 ```
 
