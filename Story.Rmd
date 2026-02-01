@@ -35,11 +35,12 @@ the compressed files.
 library(R.utils)
 gunzip("Data/reviews.csv.gz")
 ```
+
 First, the listings and reviews datasets are imported from CSV files using read_csv and stored as d.listings and d.reviews. After loading the listings data, the amount of missing data is examined by calculating both the absolute number of missing values in each column and the proportion of missing values relative to the total number of observations. This provides an overview of data completeness and helps identify variables that may require cleaning or removal.
 
 Based on this inspection, the column license is removed from the listings dataset because it contains only missing values and therefore provides no usable information for the analysis. The remaining missing values in selected numeric variables are then addressed by replacing NA values with zeros for price and reviews_per_month, ensuring that these variables contain valid numeric values and can be used in subsequent analyses. The last_review variable is intentionally left unchanged, as imputing a date where none exists would not be meaningful.
 
-The same missing-data diagnostics are then applied to the reviews dataset by again calculating the number and proportion of missing values in each column. Missing values in the comments column are replaced with the string "Unknown" so that all review records contain a valid text entry and can be processed consistently.
+The same missing-data diagnostics are then applied to the reviews dataset by again calculating the number and proportion of missing values in each column. Missing values in the comments column are replaced with the string "Unknown" so that all review records contain a valid text entry and can be processed consistently. Afterwards, all non-english comments are deleted. It is explained in the next section why this was done.
 
 Finally, the listings dataset is checked for duplicate listing identifiers. This is done by counting how often each id appears, filtering for those that occur more than once, and displaying only the distinct duplicated entries. This step verifies whether the primary key in the listings data is unique, which is important for reliable joins and further analysis.
 
@@ -47,6 +48,7 @@ Finally, the listings dataset is checked for duplicate listing identifiers. This
 library(readr)
 library(dplyr)
 library(tidyr)
+library(cld3)
 
 d.listings <- read_csv("Data/listings.csv")
 d.reviews <- read_csv("Data/reviews.csv")
@@ -71,6 +73,16 @@ colMeans(is.na(d.reviews))
 d.reviews <- d.reviews %>% 
   replace_na(list(comments = 'Unkown'))
 
+# filter out non-english comments
+d.reviews_eng <- d.reviews %>%
+  mutate(
+    detected_language = detect_language(comments)
+  ) %>%
+  filter(
+    detected_language == "en" | is.na(detected_language)
+  ) %>%
+  select(-detected_language)
+
 # Check for duplicate Id's in listings
 d.listings %>%
   add_count(id) %>%
@@ -94,7 +106,7 @@ Finally, to improve clarity and avoid ambiguity in the merged dataset, review-re
 by <- join_by(id == listing_id)
 
 d.merged <- d.listings %>%
-  left_join(d.reviews, by = by)
+  left_join(d.reviews_eng, by = by)
 
 # Sanity checks for merge below
 
@@ -106,7 +118,7 @@ d.merged %>%
   )
 
 # anti_join to inspect any mismatches
-anti_join(listings, reviews, by = c("id" = "listing_id")) |>
+anti_join(d.listings, d.reviews, by = c("id" = "listing_id")) |>
   View()
 
 # Upon closer, manual inspection wiht the View() it is evident that all the non matched columns exist because they do not have a review and therefore no listing_id to match (because column last_review is all NA's).
@@ -117,11 +129,82 @@ d.merged <- d.merged %>%
 
 ```
 
+
+
+# Chapter of choice
+
+```{r}
+
+# this is here just so that the cell can be re-run without duplicating the new columns
+d.merged <- d.merged %>% 
+  select(c(id:comments))
+
+library(tidytext)
+library(textdata)
+
+comments_df <- d.merged %>%
+  select(review_id, comments)
+
+
+# Preprocess data; important for effective sentiment analysis
+
+# Lowercase
+comments_df <- comments_df %>%
+  mutate(comments = tolower(comments))
+
+# Remove punctuation
+comments_df <- comments_df %>%
+  mutate(comments = gsub("[[:punct:]]", "", comments))
+
+# Tokenize into one word per row; review_id is kept automatically
+text_words <- comments_df %>%
+  unnest_tokens(word, comments)
+
+
+bing <- get_sentiments("bing")
+
+sentiment_bing <- text_words %>%
+  inner_join(bing, by = "word")
+
+# if a comment exceeds treshold he will be categorized as either good, neutral or bad
+# it depends on the number of positive and negative words/sentiments in the comment
+sentiment_per_comment_bing <- sentiment_bing %>%
+  group_by(review_id) %>%
+  summarise(
+    n_positive = sum(sentiment == "positive"),
+    n_negative = sum(sentiment == "negative"),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    bing_score = case_when(
+      n_positive > n_negative ~  1,   # good
+      n_positive < n_negative ~ -1,   # bad
+      TRUE                    ~  0    # neutral
+    )
+  )
+
+d.merged <- d.merged %>%
+  left_join(sentiment_per_comment_bing, by = "review_id") %>%
+  mutate(
+    bing_score = if_else(is.na(bing_score), 0L, bing_score)
+  )
+
+
+```
+
+
+
+```{r}
+d.merged %>%
+  View()
+```
+
+
+
+
 # Data Visualization / Story
 
 # Model
-
-# Chapter of choice
 
 # Conclusions
 
