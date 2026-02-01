@@ -216,8 +216,12 @@ d.merged %>%
 library(ggplot2)
 library(treemapify)
 
+treemap <- d.merged %>% 
+  distinct(id, room_type) %>%
+  count(room_type, name = "value")
+
 ggplot(
-  data,
+  treemap,
   aes(
     area  = value,
     fill  = room_type,
@@ -236,6 +240,64 @@ ggplot(
     drop = FALSE
   ) +
   labs(title = "Room types (Listings)")
+
+```
+
+```{r}
+
+library(scales)
+library(fmsb)
+
+# 1) Aggregate at neighbourhood_group level
+radar_raw <- d.merged %>%
+  group_by(neighbourhood_group) %>%
+  summarise(
+    n_hosts        = n_distinct(host_id),
+    n_listings     = n_distinct(id),
+    avg_price      = mean(price, na.rm = TRUE),
+    avg_min_nights = mean(minimum_nights, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+radar_scaled <- radar_raw %>%
+  mutate(
+    n_hosts        = rescale(n_hosts,        to = c(0, 100)),
+    n_listings     = rescale(n_listings,     to = c(0, 100)),
+    avg_price      = rescale(avg_price,      to = c(0, 100)),
+    avg_min_nights = rescale(avg_min_nights, to = c(0, 100))
+  )
+
+# Set up a 3 x 4 layout for 12 neighbourhood groups
+par(mfrow = c(3, 4), mar = c(1, 1, 3, 1))
+
+# Precompute global max and min for the axes (after scaling)
+axis_max <- apply(radar_scaled[, -1], 2, max)
+axis_min <- apply(radar_scaled[, -1], 2, min)
+
+for (g in radar_scaled$neighbourhood_group) {
+  # pick one neighbourhood
+  row_g <- radar_scaled %>%
+    filter(neighbourhood_group == g) %>%
+    select(n_hosts, n_listings, avg_price, avg_min_nights)
+
+  # build the data frame: max row, min row, group row
+  df_radar <- rbind(axis_max, axis_min, row_g)
+  rownames(df_radar) <- c("max", "min", as.character(g))
+
+  radarchart(
+    df_radar,
+    axistype = 1,
+    pcol     = "#08519c",
+    pfcol    = scales::alpha("#4292c6", 0.5),
+    plwd     = 2,
+    cglcol   = "grey80",
+    cglty    = 1,
+    axislabcol = "grey40",
+    caxislabels = c("0", "25", "50", "75", "100"),
+    vlcex    = 0.8
+  )
+  title(main = g, cex.main = 1)
+}
 
 ```
 
