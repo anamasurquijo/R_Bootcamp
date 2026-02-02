@@ -258,25 +258,45 @@ With the merged data in the dataset 'r d.merged' as solid basis is provided for 
 
 To answer the research questions, the data must be analysed. In this chapter, different visualizations are examined and their implications discussed. The visualizations are based on the merged dataset from the previous chapter. For most visualizations interim datasets are created, serving as short-term data variables. This allows to keep the *base* dataset clean while loading only the necessary data for visualization and performing data transformations on it if needed.
 
+## Number of listings per room type
+
+First we visualize the number of listings according to the room types. For that it a horizontal barchart displaying the ranking was created. From this visual it is evident that the most listings are rented as entire homes/apartments, followed by private rooms. Hotel and shared rooms make a negligible part of the distribution. Private rooms where guests live in the home of the host are making about one quarter of all listings and the majority of listings take up about three quarters. This means that most listings use entire apartment which take up a lot of living space in comparison to private rooms which are used by the people living in them regardless if the private room is rented or not.
+
 
 ```{r}
 library(ggplot2)
-library(treemapify)
 
-treemap <- d.merged %>% 
+# Listing-level counts per room type
+room_counts <- d.merged %>% 
   distinct(id, room_type) %>%
-  count(room_type, name = "value")
+  count(room_type, name = "value") %>%
+  mutate(
+    room_type = factor(
+      room_type,
+      levels = c(
+        "Entire home/apt",
+        "Private room",
+        "Shared room",
+        "Hotel room"
+      )
+    )
+  )
 
+# Horizontal bar chart
 ggplot(
-  treemap,
+  room_counts,
   aes(
-    area  = value,
-    fill  = room_type,
-    label = sprintf("%s\n%d", room_type, value)
+    x    = value,
+    y    = room_type,
+    fill = room_type
   )
 ) +
-  geom_treemap() +
-  geom_treemap_text(place = "centre", size = 12) +
+  geom_col(width = 0.7) +
+  geom_text(
+    aes(label = value),
+    hjust = -0.1,
+    size = 4
+  ) +
   scale_fill_manual(
     values = c(
       "Entire home/apt" = "#08519c",
@@ -284,10 +304,19 @@ ggplot(
       "Shared room"     = "#9ecae1",
       "Hotel room"      = "#deebf7"
     ),
-    drop = FALSE
+    guide = "none"
   ) +
-  labs(title = "Room types (Listings)")
-
+  labs(
+    title = "Room types (Listings)",
+    x = "Number of listings",
+    y = "Room Type"
+  ) +
+  expand_limits(x = max(room_counts$value) * 1.1) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5)
+  )
+  
 ```
 
 ```{r}
