@@ -375,7 +375,7 @@ geo_stats <- geojson %>%
 
 p_price <- ggplot(geo_stats) +
   geom_sf(aes(fill = avg_price), color = "white", linewidth = 0.2) +
-  scale_fill_viridis_c(option = "magma") +
+  scale_fill_viridis_c(option = "cividis") +
   labs(
     title = "Average price by neighbourhood group",
     fill  = "Avg. price"
@@ -384,7 +384,7 @@ p_price <- ggplot(geo_stats) +
 
 p_stays <- ggplot(geo_stats) +
   geom_sf(aes(fill = total_stays), color = "white", linewidth = 0.2) +
-  scale_fill_viridis_c(option = "magma", trans = "sqrt") +
+  scale_fill_viridis_c(option = "cividis", trans = "sqrt") +
   labs(
     title = "Number of stays (reviews) by neighbourhood group",
     fill  = "Total stays"
@@ -461,20 +461,20 @@ geo_neg <- geojson %>%
 p_count <- ggplot(geo_neg) +
   geom_sf(aes(fill = n_negative_reviews), color = "white", linewidth = 0.2) +
   scale_fill_viridis_c(
-    option = "plasma",
+    option = "cividis",
     na.value = "grey90",
     name = "Negative reviews"
   ) +
   labs(
     title = "Number of negative reviews per neighbourhood",
-    subtitle = "Darker areas have more negative reviews"
+    subtitle = "Lighter areas have more negative reviews"
   ) +
   theme_minimal()
 
 p_share <- ggplot(geo_neg) +
   geom_sf(aes(fill = share_negative), color = "white", linewidth = 0.2) +
   scale_fill_viridis_c(
-    option = "plasma",
+    option = "cividis",
     na.value = "grey90",
     labels = scales::percent_format(accuracy = 1),
     name = "% negative"
