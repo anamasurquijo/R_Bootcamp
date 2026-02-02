@@ -264,6 +264,248 @@ d.merged %>%
 
 # Data Visualization / Story
 
+
+
+```{r}
+library(ggplot2)
+library(treemapify)
+
+treemap <- d.merged %>% 
+  distinct(id, room_type) %>%
+  count(room_type, name = "value")
+
+ggplot(
+  treemap,
+  aes(
+    area  = value,
+    fill  = room_type,
+    label = sprintf("%s\n%d", room_type, value)
+  )
+) +
+  geom_treemap() +
+  geom_treemap_text(place = "centre", size = 12) +
+  scale_fill_manual(
+    values = c(
+      "Entire home/apt" = "#08519c",
+      "Private room"    = "#4292c6",
+      "Shared room"     = "#9ecae1",
+      "Hotel room"      = "#deebf7"
+    ),
+    drop = FALSE
+  ) +
+  labs(title = "Room types (Listings)")
+
+```
+
+```{r}
+
+library(scales)
+library(fmsb)
+
+# 1) Aggregate at neighbourhood_group level
+radar_raw <- d.merged %>%
+  group_by(neighbourhood_group) %>%
+  summarise(
+    n_hosts        = n_distinct(host_id),
+    n_listings     = n_distinct(id),
+    avg_price      = mean(price, na.rm = TRUE),
+    avg_min_nights = mean(minimum_nights, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+radar_scaled <- radar_raw %>%
+  mutate(
+    n_hosts        = rescale(n_hosts,        to = c(0, 100)),
+    n_listings     = rescale(n_listings,     to = c(0, 100)),
+    avg_price      = rescale(avg_price,      to = c(0, 100)),
+    avg_min_nights = rescale(avg_min_nights, to = c(0, 100))
+  )
+
+# Set up a 3 x 4 layout for 12 neighbourhood groups
+par(mfrow = c(3, 4), mar = c(1, 1, 3, 1))
+
+# Precompute global max and min for the axes (after scaling)
+axis_max <- apply(radar_scaled[, -1], 2, max)
+axis_min <- apply(radar_scaled[, -1], 2, min)
+
+for (g in radar_scaled$neighbourhood_group) {
+  # pick one neighbourhood
+  row_g <- radar_scaled %>%
+    filter(neighbourhood_group == g) %>%
+    select(n_hosts, n_listings, avg_price, avg_min_nights)
+
+  # build the data frame: max row, min row, group row
+  df_radar <- rbind(axis_max, axis_min, row_g)
+  rownames(df_radar) <- c("max", "min", as.character(g))
+
+  radarchart(
+    df_radar,
+    axistype = 1,
+    pcol     = "#08519c",
+    pfcol    = scales::alpha("#4292c6", 0.5),
+    plwd     = 2,
+    cglcol   = "grey80",
+    cglty    = 1,
+    axislabcol = "grey40",
+    caxislabels = c("0", "25", "50", "75", "100"),
+    vlcex    = 0.8
+  )
+  title(main = g, cex.main = 1)
+}
+
+```
+
+```{r}
+
+library(sf)
+library(patchwork)
+
+geojson <- st_read("Data/neighbourhoods.geojson")
+
+map_stats <- d.merged %>%
+  group_by(neighbourhood_group) %>%
+  summarise(
+    avg_price    = mean(price, na.rm = TRUE),
+    total_stays  = sum(number_of_reviews, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+geo_stats <- geojson %>%
+  left_join(map_stats, by = "neighbourhood_group")
+
+p_price <- ggplot(geo_stats) +
+  geom_sf(aes(fill = avg_price), color = "white", linewidth = 0.2) +
+  scale_fill_viridis_c(option = "magma") +
+  labs(
+    title = "Average price by neighbourhood group",
+    fill  = "Avg. price"
+  ) +
+  theme_minimal()
+
+p_stays <- ggplot(geo_stats) +
+  geom_sf(aes(fill = total_stays), color = "white", linewidth = 0.2) +
+  scale_fill_viridis_c(option = "magma", trans = "sqrt") +
+  labs(
+    title = "Number of stays (reviews) by neighbourhood group",
+    fill  = "Total stays"
+  ) +
+  theme_minimal()
+
+p_price + p_stays + plot_annotation(title = "Neighbourhood Groups in Zürich")
+
+```
+
+```{r}
+
+library(dplyr)
+library(leaflet)
+
+airbnb_listings <- d.merged %>%
+  distinct(id, .keep_all = TRUE)
+
+# Check that lat/lon look ok (optional)
+summary(airbnb_listings$latitude)
+summary(airbnb_listings$longitude)
+
+# Basic leaflet map with basemap + all points
+leaflet(airbnb_listings) %>%
+  # tile layer with streets etc. 
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  
+  # each Airbnb as a point with information
+  addCircleMarkers(
+    lng = ~longitude,
+    lat = ~latitude,
+    radius = 3,
+    stroke = FALSE,
+    fillOpacity = 0.6,
+    color = "#FF5733",
+    clusterOptions = markerClusterOptions(),
+    popup = ~paste0(
+      "<b>", name, "</b><br/>",
+      "Room type: ", room_type, "<br/>",
+      "Price: ", price, " CHF<br/>",
+      "Neighbourhood: ", neighbourhood
+    )
+  )
+
+
+```
+
+```{r}
+
+neg_stats <- d.merged %>%
+  filter(bing_score == -1) %>%
+  group_by(neighbourhood) %>%
+  summarise(
+    n_negative_reviews = n(),
+    .groups = "drop"
+  )
+
+all_stats <- d.merged %>%
+  group_by(neighbourhood) %>%
+  summarise(
+    n_reviews = n(),
+    .groups = "drop"
+  )
+
+neg_stats <- neg_stats %>%
+  left_join(all_stats, by = "neighbourhood") %>%
+  mutate(
+    share_negative = n_negative_reviews / n_reviews
+  )
+
+geo_neg <- geojson %>%
+  left_join(neg_stats, by = "neighbourhood")
+
+p_count <- ggplot(geo_neg) +
+  geom_sf(aes(fill = n_negative_reviews), color = "white", linewidth = 0.2) +
+  scale_fill_viridis_c(
+    option = "plasma",
+    na.value = "grey90",
+    name = "Negative reviews"
+  ) +
+  labs(
+    title = "Number of negative reviews per neighbourhood",
+    subtitle = "Darker areas have more negative reviews"
+  ) +
+  theme_minimal()
+
+p_share <- ggplot(geo_neg) +
+  geom_sf(aes(fill = share_negative), color = "white", linewidth = 0.2) +
+  scale_fill_viridis_c(
+    option = "plasma",
+    na.value = "grey90",
+    labels = scales::percent_format(accuracy = 1),
+    name = "% negative"
+  ) +
+  labs(
+    title = "Share of negative reviews per neighbourhood",
+    subtitle = "Fraction of reviews with bing_score = -1"
+  ) +
+  theme_minimal()
+
+p_count + p_share + plot_annotation(
+  title = "Negative Airbnb reviews in Zürich by neighbourhood"
+)
+
+
+```
+
+
+
+```{r}
+
+negative_reviews %>%
+  select(review_id, review_date, comments) %>%
+  View()
+
+
+```
+
+
+
+
 # Model
 
 # Conclusions
