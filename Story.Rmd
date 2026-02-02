@@ -492,14 +492,53 @@ p_count + p_share + plot_annotation(
 
 ```
 
+```{r}
+
+interim <- d.merged %>%
+  distinct(id, .keep_all = TRUE)
+
+ggplot(
+  interim %>% filter(minimum_nights <= 35),
+  aes(x = minimum_nights)
+) +
+  geom_histogram(
+    binwidth = 1,
+    fill = "#3182bd",
+    alpha = 0.8,
+    boundary = 0
+  ) +
+  scale_x_continuous(breaks = seq(0, 30, 2)) +
+  labs(
+    title = "Distribution of minimum nights (1–35, listing level)",
+    x = "Minimum nights",
+    y = "Number of listings"
+  ) +
+  theme_minimal()
+
+```
+
+```{r}
+
+
+
+```
+
+
+
 
 
 ```{r}
 
-negative_reviews %>%
-  select(review_id, review_date, comments) %>%
-  View()
+min_nights <- d.merged %>%
+  distinct(id, minimum_nights) %>%
+  count(minimum_nights) %>%
+  arrange(minimum_nights) %>%
+  mutate(
+    share = n / sum(n),
+    cum_share = cumsum(share)
+  )
 
+print(n = 53, min_nights)
 
 ```
 
