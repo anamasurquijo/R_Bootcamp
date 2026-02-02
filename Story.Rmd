@@ -319,12 +319,30 @@ ggplot(
   
 ```
 
+# Neighbourhood group characteristics
+
+In this section the different neighbourhood group characteristics are analyzed. For that the groups are measured according to their total number of hosts and listings aswell as their average price and average number of minimum nights of a stay. 
+
+As an overall insights: 
+* The numbers of listings and hosts tend to move together meaning groups with many listings also usually have many hosts. This may indicate active Airbnb markets instead of a few large-scale hosts.
+* Average price varies more stronlgy than average minimum nights. Generally, the minimum nights stay moderate across the city.
+* Each group has a different profile suggesting no uniform market.
+
+While we will not go into details of all neighbourhood groups, we will highlight some of them.
+
+Kreis 1, the Old Town, displays higher prices, a moderate number of listings and hosts and shorter minimum stays. This is propably because of its smaller size and likely driven by tourists and business travelers looking for a premium markert. Kreis 2 shows a similar profile.
+
+Some of the groups more far away from the city center like Kreis 12 display a very low interest from hosts to publish listings. Kreis 5 displays as similar pattern but with relatively high prices. Kreis 12 displays its more peripheral and residential character as its being the least active Airbnb area. Kreis 5 with its direction to Schlieren where a more industrial area lies, displays less space for Airbnb's. 
+
+Kreis 3 and 4 with the popular neighbourhood's have profiles with the most hosts and listings indicating the most active market. Which might be also the most affected by possible changes to renting regulations.
+
+
 ```{r}
 
 library(scales)
 library(fmsb)
 
-# 1) Aggregate at neighbourhood_group level
+# Aggregate at neighbourhood_group level
 radar_raw <- d.merged %>%
   group_by(neighbourhood_group) %>%
   summarise(
