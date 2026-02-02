@@ -519,7 +519,82 @@ ggplot(
 
 ```{r}
 
+library(leaflet)
+library(scales) 
 
+listings <- d.merged %>%
+  distinct(id, .keep_all = TRUE)
+
+# Average minimum_nights per neighbourhood
+neigh_stats <- listings %>%
+  group_by(neighbourhood) %>%
+  summarise(
+    avg_minimum_nights = mean(minimum_nights, na.rm = TRUE),
+    n_listings         = n(),
+    .groups = "drop"
+  )
+
+# Join to neighbourhood polygons and transform to WGS84 (lat/lon)
+geo_min <- geojson %>%
+  left_join(neigh_stats, by = "neighbourhood")
+
+geo_min_4326 <- st_transform(geo_min, 4326)
+
+# Point per neighbourhood (for bubbles)
+neigh_pts <- st_point_on_surface(geo_min_4326)
+coords    <- st_coordinates(neigh_pts)
+
+pts_df <- cbind(
+  st_drop_geometry(neigh_pts),
+  lon = coords[, "X"],
+  lat = coords[, "Y"]
+)
+
+# Colour + size
+pal <- colorNumeric("cividis", domain = pts_df$avg_minimum_nights)
+radius_scaled <- rescale(pts_df$avg_minimum_nights, to = c(4, 16))
+
+# Interactive leaflet map with neighbourhood borders
+leaflet(geo_min_4326) %>%
+  addProviderTiles(providers$OpenStreetMap.Mapnik) %>%
+  
+  # neighbourhood outlines 
+  addPolygons(
+    color         = "#444444",     # border colour
+    weight        = 1.2,           # thickness of line
+    opacity       = 0.9,
+    fill          = FALSE,         # just outlines
+    highlightOptions = highlightOptions(
+      color = "red",
+      weight = 2,
+      bringToFront = TRUE
+    ),
+    label = ~neighbourhood         # hover label on polygons 
+  ) %>%
+  
+  # bubbles per neighbourhood
+  addCircleMarkers(
+    data        = pts_df,
+    lng         = ~lon,
+    lat         = ~lat,
+    radius      = radius_scaled,
+    color       = "#ffffff",
+    weight      = 1,
+    fillColor   = ~pal(avg_minimum_nights),
+    fillOpacity = 0.85,
+    popup = ~paste0(
+      "<b>", neighbourhood, "</b><br>",
+      "Avg. minimum nights: ", round(avg_minimum_nights, 1), "<br>",
+      "Listings: ", n_listings
+    )
+  ) %>%
+  
+  addLegend(
+    pal      = pal,
+    values   = ~avg_minimum_nights,
+    position = "bottomright",
+    title    = "Avg. minimum nights"
+  )
 
 ```
 
