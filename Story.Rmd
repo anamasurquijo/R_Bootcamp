@@ -435,6 +435,12 @@ ggplot(
 
 ## Minimum nights per neighbourhood map
 
+The visual below deepens our knowledge of the previous insights regarding minimum nights per stay. It displays the mean minimum nights of all listings per neighbourhood as a bubble map. The bigger the bubble the higher the minimum nights mean value. 
+
+Most of the neighbourhoods have a mean between 1 and 19. The closer you get to the Old Town, the lower the mean of the required minimum stay gets. Neighbourhood *Saatlen*, with a mean of 43.5, is the only neighbourhood where the mean minimum stay is over 19.
+
+With this visualization it is possible double down on some of the insights and hyptotheses from the previous section. Most of the listings cater for short-term rentals, possible for tourists or business clients. 
+
 ```{r}
 
 library(leaflet)
