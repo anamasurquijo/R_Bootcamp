@@ -321,11 +321,11 @@ ggplot(
 
 # Neighbourhood group characteristics
 
-In this section the different neighbourhood group characteristics are analyzed. For that the groups are measured according to their total number of hosts and listings aswell as their average price and average number of minimum nights of a stay. 
+In this section the different neighbourhood group characteristics are analyzed. For that the groups are measured according to their total number of hosts and listings aswell as their mean price and mean number of minimum nights of a stay. 
 
 As an overall insights: 
 * The numbers of listings and hosts tend to move together meaning groups with many listings also usually have many hosts. This may indicate active Airbnb markets instead of a few large-scale hosts.
-* Average price varies more stronlgy than average minimum nights. Generally, the minimum nights stay moderate across the city.
+* Mean price varies more stronlgy than mean minimum nights. Generally, the minimum nights stay moderate across the city.
 * Each group has a different profile suggesting no uniform market.
 
 While we will not go into details of all neighbourhood groups, we will highlight some of them.
@@ -348,8 +348,8 @@ radar_raw <- d.merged %>%
   summarise(
     n_hosts        = n_distinct(host_id),
     n_listings     = n_distinct(id),
-    avg_price      = mean(price, na.rm = TRUE),
-    avg_min_nights = mean(minimum_nights, na.rm = TRUE),
+    mean_price      = mean(price, na.rm = TRUE),
+    mean_min_nights = mean(minimum_nights, na.rm = TRUE),
     .groups = "drop"
   )
 
@@ -357,8 +357,8 @@ radar_scaled <- radar_raw %>%
   mutate(
     n_hosts        = rescale(n_hosts,        to = c(0, 100)),
     n_listings     = rescale(n_listings,     to = c(0, 100)),
-    avg_price      = rescale(avg_price,      to = c(0, 100)),
-    avg_min_nights = rescale(avg_min_nights, to = c(0, 100))
+    mean_price      = rescale(mean_price,      to = c(0, 100)),
+    mean_min_nights = rescale(mean_min_nights, to = c(0, 100))
   )
 
 # Set up a 3 x 4 layout for 12 neighbourhood groups
@@ -372,7 +372,7 @@ for (g in radar_scaled$neighbourhood_group) {
   # pick one neighbourhood
   row_g <- radar_scaled %>%
     filter(neighbourhood_group == g) %>%
-    select(n_hosts, n_listings, avg_price, avg_min_nights)
+    select(n_hosts, n_listings, mean_price, mean_min_nights)
 
   # build the data frame: max row, min row, group row
   df_radar <- rbind(axis_max, axis_min, row_g)
@@ -405,7 +405,7 @@ geojson <- st_read("Data/neighbourhoods.geojson")
 map_stats <- d.merged %>%
   group_by(neighbourhood_group) %>%
   summarise(
-    avg_price    = mean(price, na.rm = TRUE),
+    mean_price    = mean(price, na.rm = TRUE),
     total_stays  = sum(number_of_reviews, na.rm = TRUE),
     .groups = "drop"
   )
@@ -414,11 +414,11 @@ geo_stats <- geojson %>%
   left_join(map_stats, by = "neighbourhood_group")
 
 p_price <- ggplot(geo_stats) +
-  geom_sf(aes(fill = avg_price), color = "white", linewidth = 0.2) +
+  geom_sf(aes(fill = mean_price), color = "white", linewidth = 0.2) +
   scale_fill_viridis_c(option = "cividis") +
   labs(
-    title = "Average price by neighbourhood group",
-    fill  = "Avg. price"
+    title = "Mean price by neighbourhood group",
+    fill  = "Mean price"
   ) +
   theme_minimal()
 
@@ -565,11 +565,11 @@ library(scales)
 listings <- d.merged %>%
   distinct(id, .keep_all = TRUE)
 
-# Average minimum_nights per neighbourhood
+# mean minimum_nights per neighbourhood
 neigh_stats <- listings %>%
   group_by(neighbourhood) %>%
   summarise(
-    avg_minimum_nights = mean(minimum_nights, na.rm = TRUE),
+    mean_minimum_nights = mean(minimum_nights, na.rm = TRUE),
     n_listings         = n(),
     .groups = "drop"
   )
@@ -591,8 +591,8 @@ pts_df <- cbind(
 )
 
 # Colour + size
-pal <- colorNumeric("cividis", domain = pts_df$avg_minimum_nights)
-radius_scaled <- rescale(pts_df$avg_minimum_nights, to = c(4, 16))
+pal <- colorNumeric("cividis", domain = pts_df$mean_minimum_nights)
+radius_scaled <- rescale(pts_df$mean_minimum_nights, to = c(4, 16))
 
 # Interactive leaflet map with neighbourhood borders
 leaflet(geo_min_4326) %>%
@@ -620,20 +620,20 @@ leaflet(geo_min_4326) %>%
     radius      = radius_scaled,
     color       = "#ffffff",
     weight      = 1,
-    fillColor   = ~pal(avg_minimum_nights),
+    fillColor   = ~pal(mean_minimum_nights),
     fillOpacity = 0.85,
     popup = ~paste0(
       "<b>", neighbourhood, "</b><br>",
-      "Avg. minimum nights: ", round(avg_minimum_nights, 1), "<br>",
+      "Mean minimum nights: ", round(mean_minimum_nights, 1), "<br>",
       "Listings: ", n_listings
     )
   ) %>%
   
   addLegend(
     pal      = pal,
-    values   = ~avg_minimum_nights,
+    values   = ~mean_minimum_nights,
     position = "bottomright",
-    title    = "Avg. minimum nights"
+    title    = "Mean minimum nights"
   )
 
 ```
