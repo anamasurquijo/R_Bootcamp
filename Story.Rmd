@@ -435,10 +435,20 @@ ggplot(
 
 ## Minimum nights per neighbourhood map
 
+The visual below deepens our knowledge of the previous insights regarding minimum nights per stay. It displays the mean minimum nights of all listings per neighbourhood as a bubble map. The bigger the bubble the higher the minimum nights mean value. 
+
+Most of the neighbourhoods have a mean between 1 and 19. The closer you get to the Old Town, the lower the mean of the required minimum stay gets. Neighbourhood *Saatlen*, with a mean of 43.5, is the only neighbourhood where the mean minimum stay is over 19.
+
+With this visualization it is possible double down on some of the insights and hyptotheses from the previous section. Most of the listings cater for short-term rentals, possible for tourists or business clients. 
+
 ```{r}
 
 library(leaflet)
-library(scales) 
+library(scales)
+library(sf)
+library(patchwork)
+
+geojson <- st_read("Data/neighbourhoods.geojson")
 
 listings <- d.merged %>%
   distinct(id, .keep_all = TRUE)
@@ -517,53 +527,14 @@ leaflet(geo_min_4326) %>%
 ```
 
 
- ## Mean price and number of stays per neighbourhood group maps
+ ## Mean price and number of stays per neighbourhood maps
+
+The visual below displays once the mean price and once the number of stays each per neighbourhood. The higher the value the lighter the coloring of the neighbourhood.
 
 The prices tend to be higher the closer the neighbourhood group is to the city center. This does not come as a surprise as most people want to minimize their time spent traveling to the city center for their stays. Therefore, listings close to the city center are desired and prices reflect this demand.
 
-Airbnb activit in Zurich is 
+However, the number of stays per neighbourhoods reveals, that while the city center is the most popular according to number of stays, other neighbourhoods in close proximity also record a lot of bookings and are quite popular among guests.
 
-```{r}
-
-library(sf)
-library(patchwork)
-
-geojson <- st_read("Data/neighbourhoods.geojson")
-
-map_stats <- d.merged %>%
-  distinct(id, neighbourhood_group, price, number_of_reviews) %>%
-  group_by(neighbourhood_group) %>%
-  summarise(
-    mean_price  = mean(price, na.rm = TRUE),
-    total_stays = sum(number_of_reviews, na.rm = TRUE),
-    n_listings  = n(),
-    .groups = "drop"
-  )
-
-geo_stats <- geojson %>%
-  left_join(map_stats, by = "neighbourhood_group")
-
-p_price <- ggplot(geo_stats) +
-  geom_sf(aes(fill = mean_price), color = "white", linewidth = 0.2) +
-  scale_fill_viridis_c(option = "cividis") +
-  labs(
-    title = "Mean price by neighbourhood group",
-    fill  = "Mean price"
-  ) +
-  theme_minimal()
-
-p_stays <- ggplot(geo_stats) +
-  geom_sf(aes(fill = total_stays), color = "white", linewidth = 0.2) +
-  scale_fill_viridis_c(option = "cividis", trans = "sqrt") +
-  labs(
-    title = "Number of stays (reviews) by neighbourhood group",
-    fill  = "Total stays"
-  ) +
-  theme_minimal()
-
-p_price + p_stays + plot_annotation(title = "Neighbourhood Groups in Zürich")
-
-```
 
 ```{r}
 listings <- d.merged %>%
@@ -630,7 +601,7 @@ leaflet(airbnb_listings) %>%
   addCircleMarkers(
     lng = ~longitude,
     lat = ~latitude,
-    radius = 3,
+    radius = 6,
     stroke = FALSE,
     fillOpacity = 0.6,
     color = "#FF5733",
@@ -646,7 +617,15 @@ leaflet(airbnb_listings) %>%
 
 ```
 
-# Reviews analysis on maps
+# Reviews analysis maps
+
+Below the two maps visualize negative reviews. The left map displays the absolute number of negative reviews, while the right map shows the proportion of negative reviews. 
+
+According to the left map, on first view one might believe that the city center receives by far the most negative reviews. But the city center is also the place with the most amount of stays and therefore the most reviews. Thus the proportion of negative reviews must be taken into account, which displays a more nuanced picture.
+
+The city center is still one of the neighbourhoods with the highest percentage of negative reviews. Yet, there are much more neighbourhoods with a percentage above 2% and the neighbourhood *Friesenberg* even has a higher percentage than the city center. 
+
+Overall, the share of negative reviews is much more informative than the absolute number. Although there is spatial variation in the share of negative reviews, the absolute levels are low, with no neighbourhood exceeding approximately 2.5% negative feedback, suggesting generally high guest satisfaction citywide.
 
 ```{r}
 
