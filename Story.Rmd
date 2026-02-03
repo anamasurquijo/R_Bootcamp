@@ -395,6 +395,125 @@ for (g in radar_scaled$neighbourhood_group) {
 
 ```
 
+## Distribution of minimum nights
+
+The histogram shows the distribution of minimum nights requirement for each listing across Zurich. It is based on the listings-level data and restricted to values between 1 and 35 nights. 
+
+The distribution is highly right-skewed, the majority of listings only require a minimum stay of 1 or 2 nights. This insight suggests that short-term visists might be the favoured type of stay and may displace long-term housing. However, more information is needed to confirm this insight.
+
+The distribution then decays quickly up to 7 minimum nights. After that there are some notable spikes in the long-tail, for example the minimum stay of 20 nights. But these make only a marginal part of the distribution. Yet, there is a significant spike at 30 minimum nights. These might suggest strategic offerings made by hosts to accomodate to special demands.
+
+Overall, the distribution highlights a dominant short-term rental segment characterised by very low minimal stay requirements along side a small but visible group targeting longer stays.
+
+```{r}
+
+interim <- d.merged %>%
+  distinct(id, .keep_all = TRUE)
+
+ggplot(
+  interim %>% filter(minimum_nights <= 35),
+  aes(x = minimum_nights)
+) +
+  geom_histogram(
+    binwidth = 1,
+    fill = "#3182bd",
+    alpha = 0.8,
+    boundary = 0
+  ) +
+  scale_x_continuous(breaks = seq(0, 35, 2)) +
+  labs(
+    title = "Distribution of minimum nights (1–35, listing level)",
+    x = "Minimum nights",
+    y = "Number of listings"
+  ) +
+  theme_minimal()
+
+```
+
+## Minimum nights per neighbourhood map
+
+```{r}
+
+library(leaflet)
+library(scales) 
+
+listings <- d.merged %>%
+  distinct(id, .keep_all = TRUE)
+
+# mean minimum_nights per neighbourhood
+neigh_stats <- listings %>%
+  group_by(neighbourhood) %>%
+  summarise(
+    mean_minimum_nights = mean(minimum_nights, na.rm = TRUE),
+    n_listings         = n(),
+    .groups = "drop"
+  )
+
+# Join to neighbourhood polygons and transform to WGS84 (lat/lon)
+geo_min <- geojson %>%
+  left_join(neigh_stats, by = "neighbourhood")
+
+geo_min_4326 <- st_transform(geo_min, 4326)
+
+# Point per neighbourhood (for bubbles)
+neigh_pts <- st_point_on_surface(geo_min_4326)
+coords    <- st_coordinates(neigh_pts)
+
+pts_df <- cbind(
+  st_drop_geometry(neigh_pts),
+  lon = coords[, "X"],
+  lat = coords[, "Y"]
+)
+
+# Colour + size
+pal <- colorNumeric("cividis", domain = pts_df$mean_minimum_nights)
+radius_scaled <- rescale(pts_df$mean_minimum_nights, to = c(4, 16))
+
+# Interactive leaflet map with neighbourhood borders
+leaflet(geo_min_4326) %>%
+  addProviderTiles(providers$OpenStreetMap.Mapnik) %>%
+  
+  # neighbourhood outlines 
+  addPolygons(
+    color         = "#444444",     # border colour
+    weight        = 1.2,           # thickness of line
+    opacity       = 0.9,
+    fill          = FALSE,         # just outlines
+    highlightOptions = highlightOptions(
+      color = "red",
+      weight = 2,
+      bringToFront = TRUE
+    ),
+    label = ~neighbourhood         # hover label on polygons 
+  ) %>%
+  
+  # bubbles per neighbourhood
+  addCircleMarkers(
+    data        = pts_df,
+    lng         = ~lon,
+    lat         = ~lat,
+    radius      = radius_scaled,
+    color       = "#ffffff",
+    weight      = 1,
+    fillColor   = ~pal(mean_minimum_nights),
+    fillOpacity = 0.85,
+    popup = ~paste0(
+      "<b>", neighbourhood, "</b><br>",
+      "Mean minimum nights: ", round(mean_minimum_nights, 1), "<br>",
+      "Listings: ", n_listings
+    )
+  ) %>%
+  
+  addLegend(
+    pal      = pal,
+    values   = ~mean_minimum_nights,
+    position = "bottomright",
+    title    = "Mean minimum nights"
+  )
+
+```
+
+
  ## Mean price and number of stays per neighbourhood group maps
 
 The prices tend to be higher the closer the neighbourhood group is to the city center. This does not come as a surprise as most people want to minimize their time spent traveling to the city center for their stays. Therefore, listings close to the city center are desired and prices reflect this demand.
@@ -583,116 +702,6 @@ p_count + p_share + plot_annotation(
   title = "Negative Airbnb reviews in Zürich by neighbourhood"
 )
 
-
-```
-
-## Distribution of minimumg nights
-
-```{r}
-
-interim <- d.merged %>%
-  distinct(id, .keep_all = TRUE)
-
-ggplot(
-  interim %>% filter(minimum_nights <= 35),
-  aes(x = minimum_nights)
-) +
-  geom_histogram(
-    binwidth = 1,
-    fill = "#3182bd",
-    alpha = 0.8,
-    boundary = 0
-  ) +
-  scale_x_continuous(breaks = seq(0, 35, 2)) +
-  labs(
-    title = "Distribution of minimum nights (1–35, listing level)",
-    x = "Minimum nights",
-    y = "Number of listings"
-  ) +
-  theme_minimal()
-
-```
-
-## Minimum nights per neighbourhood map
-
-```{r}
-
-library(leaflet)
-library(scales) 
-
-listings <- d.merged %>%
-  distinct(id, .keep_all = TRUE)
-
-# mean minimum_nights per neighbourhood
-neigh_stats <- listings %>%
-  group_by(neighbourhood) %>%
-  summarise(
-    mean_minimum_nights = mean(minimum_nights, na.rm = TRUE),
-    n_listings         = n(),
-    .groups = "drop"
-  )
-
-# Join to neighbourhood polygons and transform to WGS84 (lat/lon)
-geo_min <- geojson %>%
-  left_join(neigh_stats, by = "neighbourhood")
-
-geo_min_4326 <- st_transform(geo_min, 4326)
-
-# Point per neighbourhood (for bubbles)
-neigh_pts <- st_point_on_surface(geo_min_4326)
-coords    <- st_coordinates(neigh_pts)
-
-pts_df <- cbind(
-  st_drop_geometry(neigh_pts),
-  lon = coords[, "X"],
-  lat = coords[, "Y"]
-)
-
-# Colour + size
-pal <- colorNumeric("cividis", domain = pts_df$mean_minimum_nights)
-radius_scaled <- rescale(pts_df$mean_minimum_nights, to = c(4, 16))
-
-# Interactive leaflet map with neighbourhood borders
-leaflet(geo_min_4326) %>%
-  addProviderTiles(providers$OpenStreetMap.Mapnik) %>%
-  
-  # neighbourhood outlines 
-  addPolygons(
-    color         = "#444444",     # border colour
-    weight        = 1.2,           # thickness of line
-    opacity       = 0.9,
-    fill          = FALSE,         # just outlines
-    highlightOptions = highlightOptions(
-      color = "red",
-      weight = 2,
-      bringToFront = TRUE
-    ),
-    label = ~neighbourhood         # hover label on polygons 
-  ) %>%
-  
-  # bubbles per neighbourhood
-  addCircleMarkers(
-    data        = pts_df,
-    lng         = ~lon,
-    lat         = ~lat,
-    radius      = radius_scaled,
-    color       = "#ffffff",
-    weight      = 1,
-    fillColor   = ~pal(mean_minimum_nights),
-    fillOpacity = 0.85,
-    popup = ~paste0(
-      "<b>", neighbourhood, "</b><br>",
-      "Mean minimum nights: ", round(mean_minimum_nights, 1), "<br>",
-      "Listings: ", n_listings
-    )
-  ) %>%
-  
-  addLegend(
-    pal      = pal,
-    values   = ~mean_minimum_nights,
-    position = "bottomright",
-    title    = "Mean minimum nights"
-  )
 
 ```
 
