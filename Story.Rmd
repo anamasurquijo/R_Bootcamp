@@ -438,7 +438,11 @@ ggplot(
 ```{r}
 
 library(leaflet)
-library(scales) 
+library(scales)
+library(sf)
+library(patchwork)
+
+geojson <- st_read("Data/neighbourhoods.geojson")
 
 listings <- d.merged %>%
   distinct(id, .keep_all = TRUE)
@@ -524,11 +528,6 @@ The prices tend to be higher the closer the neighbourhood group is to the city c
 Airbnb activit in Zurich is 
 
 ```{r}
-
-library(sf)
-library(patchwork)
-
-geojson <- st_read("Data/neighbourhoods.geojson")
 
 map_stats <- d.merged %>%
   distinct(id, neighbourhood_group, price, number_of_reviews) %>%
