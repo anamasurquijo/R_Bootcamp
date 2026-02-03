@@ -617,7 +617,15 @@ leaflet(airbnb_listings) %>%
 
 ```
 
-# Reviews analysis on maps
+# Reviews analysis maps
+
+Below the two maps visualize negative reviews. The left map displays the absolute number of negative reviews, while the right map shows the proportion of negative reviews. 
+
+According to the left map, on first view one might believe that the city center receives by far the most negative reviews. But the city center is also the place with the most amount of stays and therefore the most reviews. Thus the proportion of negative reviews must be taken into account, which displays a more nuanced picture.
+
+The city center is still one of the neighbourhoods with the highest percentage of negative reviews. Yet, there are much more neighbourhoods with a percentage above 2% and the neighbourhood *Friesenberg* even has a higher percentage than the city center. 
+
+Overall, the share of negative reviews is much more informative than the absolute number. Although there is spatial variation in the share of negative reviews, the absolute levels are low, with no neighbourhood exceeding approximately 2.5% negative feedback, suggesting generally high guest satisfaction citywide.
 
 ```{r}
 
