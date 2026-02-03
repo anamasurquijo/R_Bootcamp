@@ -529,11 +529,11 @@ leaflet(geo_min_4326) %>%
 
  ## Mean price and number of stays per neighbourhood maps
 
-The visual below displays once the mean private 
+The visual below displays once the mean price and once the number of stays each per neighbourhood. The higher the value the lighter the coloring of the neighbourhood.
 
 The prices tend to be higher the closer the neighbourhood group is to the city center. This does not come as a surprise as most people want to minimize their time spent traveling to the city center for their stays. Therefore, listings close to the city center are desired and prices reflect this demand.
 
-Airbnb activit in Zurich is 
+However, the number of stays per neighbourhoods reveals, that while the city center is the most popular according to number of stays, other neighbourhoods in close proximity also record a lot of bookings and are quite popular among guests.
 
 
 ```{r}
