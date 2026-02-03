@@ -395,6 +395,12 @@ for (g in radar_scaled$neighbourhood_group) {
 
 ```
 
+ ## Mean price and number of stays per neighbourhood group maps
+
+The prices tend to be higher the closer the neighbourhood group is to the city center. This does not come as a surprise as most people want to minimize their time spent traveling to the city center for their stays. Therefore, listings close to the city center are desired and prices reflect this demand.
+
+Airbnb activit in Zurich is 
+
 ```{r}
 
 library(sf)
@@ -403,10 +409,12 @@ library(patchwork)
 geojson <- st_read("Data/neighbourhoods.geojson")
 
 map_stats <- d.merged %>%
+  distinct(id, neighbourhood_group, price, number_of_reviews) %>%
   group_by(neighbourhood_group) %>%
   summarise(
-    mean_price    = mean(price, na.rm = TRUE),
-    total_stays  = sum(number_of_reviews, na.rm = TRUE),
+    mean_price  = mean(price, na.rm = TRUE),
+    total_stays = sum(number_of_reviews, na.rm = TRUE),
+    n_listings  = n(),
     .groups = "drop"
   )
 
@@ -434,6 +442,50 @@ p_stays <- ggplot(geo_stats) +
 p_price + p_stays + plot_annotation(title = "Neighbourhood Groups in Zürich")
 
 ```
+
+```{r}
+listings <- d.merged %>%
+  distinct(id, .keep_all = TRUE)
+
+# Neighbourhood-level stats based on listings
+map_stats <- listings %>%
+  group_by(neighbourhood) %>%
+  summarise(
+    mean_price   = mean(price, na.rm = TRUE),
+    total_stays  = sum(number_of_reviews, na.rm = TRUE),
+    n_listings   = n(),
+    .groups = "drop"
+  )
+
+# Join stats to neighbourhood geometries
+geo_stats <- geojson %>%
+  left_join(map_stats, by = "neighbourhood")
+
+# Mean price map (neighbourhood)
+p_price <- ggplot(geo_stats) +
+  geom_sf(aes(fill = mean_price), color = "white", linewidth = 0.2) +
+  scale_fill_viridis_c(option = "cividis") +
+  labs(
+    title = "Mean price by neighbourhood",
+    fill  = "Mean price"
+  ) +
+  theme_minimal()
+
+# Number of stays map (neighbourhood)
+p_stays <- ggplot(geo_stats) +
+  geom_sf(aes(fill = total_stays), color = "white", linewidth = 0.2) +
+  scale_fill_viridis_c(option = "cividis", trans = "sqrt") +
+  labs(
+    title = "Number of stays (reviews) by neighbourhood",
+    fill  = "Total stays"
+  ) +
+  theme_minimal()
+
+# Combine plots
+p_price + p_stays + plot_annotation(title = "Neighbourhoods in Zürich")
+```
+
+## Interactive map with all listings
 
 ```{r}
 
@@ -471,6 +523,8 @@ leaflet(airbnb_listings) %>%
 
 
 ```
+
+# Reviews analysis on maps
 
 ```{r}
 
@@ -532,6 +586,8 @@ p_count + p_share + plot_annotation(
 
 ```
 
+## Distribution of minimumg nights
+
 ```{r}
 
 interim <- d.merged %>%
@@ -556,6 +612,8 @@ ggplot(
   theme_minimal()
 
 ```
+
+## Minimum nights per neighbourhood map
 
 ```{r}
 
