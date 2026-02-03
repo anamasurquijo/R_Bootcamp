@@ -342,12 +342,15 @@ Kreis 3 and 4 with the popular neighbourhood's have profiles with the most hosts
 library(scales)
 library(fmsb)
 
+listings <- d.merged %>%
+  distinct(id, .keep_all = TRUE)
+
 # Aggregate at neighbourhood_group level
-radar_raw <- d.merged %>%
+radar_raw <- listings %>%
   group_by(neighbourhood_group) %>%
   summarise(
     n_hosts        = n_distinct(host_id),
-    n_listings     = n_distinct(id),
+    n_listings     = n(),  # number of listings in this group
     mean_price      = mean(price, na.rm = TRUE),
     mean_min_nights = mean(minimum_nights, na.rm = TRUE),
     .groups = "drop"
