@@ -355,6 +355,47 @@ num_summary
 
 ```
 
+```{r}
+
+boxplot_data <- d.merged %>%
+  distinct(id, .keep_all = TRUE) %>%
+  select(
+    where(is.numeric),
+    -any_of(vars_exclude)
+  ) %>%
+  pivot_longer(
+    everything(),
+    names_to  = "variable",
+    values_to = "value"
+  )
+
+ggplot(boxplot_data, aes(x = "", y = value)) +
+  geom_boxplot(
+    fill  = "#4292c6",
+    alpha = 0.7,
+    outlier.alpha = 0.4
+  ) +
+  facet_wrap(
+    ~ variable,
+    scales = "free_y"
+  ) +
+  labs(
+    title = "Distribution of numeric variables",
+    x = NULL,
+    y = NULL
+  ) +
+  theme_minimal() +
+  theme(
+    strip.text = element_text(face = "bold"),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    plot.title = element_text(hjust = 0.5)
+  )
+
+```
+
+
+
 ## Number of listings per room type
 
 First we visualize the number of listings according to the room types. For that it a horizontal barchart displaying the ranking was created. From this visual it is evident that the most listings are rented as entire homes/apartments, followed by private rooms. Hotel and shared rooms make a negligible part of the distribution. Private rooms where guests live in the home of the host are making about one quarter of all listings and the majority of listings take up about three quarters. This means that most listings use entire apartment which take up a lot of living space in comparison to private rooms which are used by the people living in them regardless if the private room is rented or not.
