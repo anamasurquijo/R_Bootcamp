@@ -258,6 +258,103 @@ With the merged data in the dataset 'r d.merged' as solid basis is provided for 
 
 To answer the research questions, the data must be analysed. In this chapter, different visualizations are examined and their implications discussed. The visualizations are based on the merged dataset from the previous chapter. For most visualizations interim datasets are created, serving as short-term data variables. This allows to keep the *base* dataset clean while loading only the necessary data for visualization and performing data transformations on it if needed.
 
+## Summary Statistics of data
+
+```{r}
+
+# These variables are numeric but are identifiers, coordinates,
+# or sentiment counters that are not meaningful for descriptive stats
+vars_exclude <- c(
+  "bing_score",
+  "host_id",
+  "id",
+  "latitude",
+  "longitude",
+  "n_negative",
+  "n_positive",
+  "review_id",
+  "reviewer_id"
+)
+
+
+# Create a summary table for the remaining numeric variables
+num_summary <- d.merged %>%
+
+  # Keep ONLY numeric variables and remove unwanted ones
+  # This ensures we compute statistics only on meaningful quantities
+  select(
+    where(is.numeric),
+    -any_of(vars_exclude)
+  ) %>%
+
+  # Compute multiple summary statistics for each numeric variable
+  summarise(
+    across(
+      everything(),
+
+      # List of summary functions to apply to EACH variable
+      list(
+        # Number of non-missing observations
+        n      = ~sum(!is.na(.)),
+
+        # Central tendency
+        mean   = ~mean(., na.rm = TRUE),
+        median = ~median(., na.rm = TRUE),
+
+        # Dispersion
+        sd     = ~sd(., na.rm = TRUE),
+
+        # Distribution shape
+        min    = ~min(., na.rm = TRUE),
+        q25    = ~quantile(., 0.25, na.rm = TRUE),
+        q75    = ~quantile(., 0.75, na.rm = TRUE),
+        max    = ~max(., na.rm = TRUE)
+      ),
+
+      # IMPORTANT: Naming convention for the generated columns
+      # This creates column names like: price__mean, price__sd, price__q25, ...
+      #
+      # Why this is needed:
+      # - summarise(across()) produces MANY columns
+      # - we need a predictable separator to later split
+      #   the column name into:
+      #     - variable name  and
+      #     - statistic name
+      #
+      # We use "__" (double underscore) instead of "_" because many variable names already contain underscores # (e.g. minimum_nights). 
+      # Using "_" would cause ambiguity.
+      #
+      # { .col } = original variable name
+      # { .fn  } = name of the summary function
+      .names = "{.col}__{.fn}"
+    )
+  ) %>%
+
+  # Reshape from wide to long format, so we group the many columns from summarise and across a bit
+  # basically, we have three columns here: variable, stat and value
+  # so each statistic is its own row
+  pivot_longer(
+    everything(),
+    names_to  = c("variable", "stat"),
+    names_sep = "__",   # must match the separator used above so doulble underscore.
+    values_to = "value"
+  ) %>%
+
+  # Reshape back to a clean summary table
+  # This puts each statistic into its own column again,
+  # but now with one row per variable
+  pivot_wider(
+    names_from  = stat,
+    values_from = value
+  ) %>%
+
+  # Order rows alphabetically to guide reader
+  arrange(variable)
+
+num_summary
+
+```
+
 ## Number of listings per room type
 
 First we visualize the number of listings according to the room types. For that it a horizontal barchart displaying the ranking was created. From this visual it is evident that the most listings are rented as entire homes/apartments, followed by private rooms. Hotel and shared rooms make a negligible part of the distribution. Private rooms where guests live in the home of the host are making about one quarter of all listings and the majority of listings take up about three quarters. This means that most listings use entire apartment which take up a lot of living space in comparison to private rooms which are used by the people living in them regardless if the private room is rented or not.
