@@ -413,6 +413,7 @@ ggplot(boxplot_data, aes(x = "", y = value)) +
   )
 
 ```
+## Outlier detection
 
 ## Correlation Analysis
 
