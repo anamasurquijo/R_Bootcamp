@@ -51,19 +51,7 @@ Importantly, the role of Airbnb is unlikely to be uniform across the city. In so
 
 This analysis is conducted for a hypothetical client, the City of Zurich, with the objective of evaluating the role of Airbnb across Zurich neighbourhoods. Using publicly available data, the study examines spatial patterns of listings, host concentration, rental intensity, and guest experiences. The overarching goal is to assess where short-term rentals appear to complement the city’s housing and tourism landscape and where targeted regulatory measures may be justified.
 
-# Data Sources
-
-The analysis is based on publicly available data from **Inside Airbnb** (<https://insideairbnb.com/get-the-data/>), an independent, non-commercial project that provides detailed information on Airbnb listings in cities around the world. The platform compiles data directly from Airbnb’s website and aims to support research and policy discussions around short-term rentals.
-
-Two datasets for the city of Zurich are used in this study:
-
-1.  **Listings dataset** This dataset contains detailed information on individual Airbnb listings, including their location, room type, price, availability, minimum stay requirements, and host characteristics. It also includes variables such as the number of listings per host and whether a listing is associated with a license.
-
-2.  **Reviews dataset** This dataset contains information on guest reviews, including review dates and the number of reviews over time. It allows for an assessment of demand dynamics and guest experiences across listings and neighbourhoods.
-
-The two datasets are merged using the unique listing identifier. This combined dataset enables a joint analysis of spatial distribution, host behaviour, usage intensity, and guest feedback. All data preparation steps, including cleaning and merging, are documented and highlighted in the analysis to ensure full reproducibility.
-
-# Objectives and Research Questions
+## Objectives and Research Questions
 
 The main objective of this analysis is to support the City of Zurich in evaluating whether, and where, regulatory measures on short-term rentals may be appropriate. Rather than treating Airbnb as a uniform phenomenon, the analysis focuses on neighbourhood-level differences and host behaviour.
 
@@ -83,9 +71,34 @@ Specifically, the study addresses the following research questions:
 
 Together, these questions provide a structured framework for assessing the role of Airbnb in Zurich and for identifying areas where targeted regulation may be most relevant.
 
-# Variables Overview
+# Dataset
 
-**listings.csv**
+## Data Sources
+
+The analysis is based on publicly available data from **Inside Airbnb** (<https://insideairbnb.com/get-the-data/>), an independent, non-commercial project that provides detailed information on Airbnb listings in cities around the world. The platform compiles data directly from Airbnb’s website and aims to support research and policy discussions around short-term rentals.
+
+Two datasets for the city of Zurich are used in this study:
+
+1.  **Listings dataset** This dataset contains detailed information on individual Airbnb listings, including their location, room type, price, availability, minimum stay requirements, and host characteristics. It also includes variables such as the number of listings per host and whether a listing is associated with a license.
+
+2.  **Reviews dataset** This dataset contains information on guest reviews, including review dates and the number of reviews over time. It allows for an assessment of demand dynamics and guest experiences across listings and neighbourhoods.
+
+The two datasets are merged using the unique listing identifier. This combined dataset enables a joint analysis of spatial distribution, host behaviour, usage intensity, and guest feedback. All data preparation steps, including cleaning and merging, are documented and highlighted in the analysis to ensure full reproducibility.
+
+## Data Preparation and Transformations
+
+**Unpacking**
+The cell below was run only once to unpack the reviews data from a .gz compressed folder. The code cell unpacked the data and directly deleted the compressed files.
+
+```{r, eval=FALSE}
+library(R.utils)
+gunzip("Data/reviews.csv.gz")
+```
+
+**Variables Overview**
+
+*listings.csv*
+
 ```{r variables_overview_listings}
 
 d.listings <- read_csv("Data/listings.csv")
@@ -93,21 +106,13 @@ glimpse(d.listings)
 
 ```
 
-**reviews.csv**
+*reviews.csv*
+
 ```{r variables_overview_reviews}
 
 d.reviews <- read_csv("Data/reviews.csv")
 glimpse(d.reviews)
 
-```
-
-# Data Preparation
-
-The cell below was run only once to unpack the reviews data from a .gz compressed folder. The code cell unpacked the data and directly deleted the compressed files.
-
-```{r, eval=FALSE}
-library(R.utils)
-gunzip("Data/reviews.csv.gz")
 ```
 
 First, the listings and reviews datasets are imported from CSV files using read_csv and stored as d.listings and d.reviews. After loading the listings data, the amount of missing data is examined by calculating both the absolute number of missing values in each column and the proportion of missing values relative to the total number of observations. This provides an overview of data completeness and helps identify variables that may require cleaning or removal.
@@ -165,6 +170,7 @@ d.listings %>%
 
 ```
 
+
 In the next cell below, the two data sets were merged.
 
 First, a join condition is explicitly defined to link the two datasets by matching the id column in the listings data with the listing_id column in the reviews data. Using this condition, the cleaned listings dataset is merged with the reviews dataset using a left join, ensuring that all listings are retained in the merged dataset while review information is added where a matching review exists.
@@ -202,7 +208,7 @@ d.merged <- d.merged %>%
 
 ```
 
-# Chapter of choice / Sentiment Analysis
+### Chapter of choice / Sentiment Analysis
 
 For the chapter of choice, a Sentiment Analysis on the comment is done to augment the merged dataset with a sentiment score. This is the reason why all non-English comments were deleted in the Data Preparation section because the Sentiment Analysis employed can only handle English text and all non-English text is assigned with negative scores even if the comment itself is very positive.
 
@@ -271,10 +277,6 @@ d.merged <- d.merged %>%
 ```
 
 With the merged data in the dataset 'r d.merged' as solid basis is provided for the analysis. The next chapter dives into the data's characteristics, patterns and trends.
-
-# Data Visualization / Story
-
-To answer the research questions, the data must be analysed. In this chapter, different visualizations are examined and their implications discussed. The visualizations are based on the merged dataset from the previous chapter. For most visualizations interim datasets are created, serving as short-term data variables. This allows to keep the *base* dataset clean while loading only the necessary data for visualization and performing data transformations on it if needed.
 
 ## Summary Statistics of data
 
@@ -411,6 +413,14 @@ ggplot(boxplot_data, aes(x = "", y = value)) +
   )
 
 ```
+
+## Correlation Analysis
+
+## Multicollinearity Assessment among Predictors
+
+# Exploratory Data Anaylsis and Visualization
+
+To answer the research questions, the data must be analysed. In this chapter, different visualizations are examined and their implications discussed. The visualizations are based on the merged dataset from the previous chapter. For most visualizations interim datasets are created, serving as short-term data variables. This allows to keep the *base* dataset clean while loading only the necessary data for visualization and performing data transformations on it if needed.
 
 ## Number of listings per room type
 
@@ -809,6 +819,7 @@ min_nights <- d.merged %>%
 print(n = 53, min_nights)
 
 ```
+
 ## Listings per host
 
 ```{r listings_per_host}
@@ -881,7 +892,7 @@ leaflet() %>%
 
 ## Evolution of reviews
 
-## Model - Prediction of reviews
+# Model - Prediction of reviews
 
 # Conclusions
 
