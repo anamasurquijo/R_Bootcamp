@@ -793,6 +793,40 @@ print(n = 53, min_nights)
 ```
 ## Listings per host
 
+```{r listings_per_host}
+library(dplyr)
+library(ggplot2)
+
+# compute the number of listings per host
+listings_per_host <- d.merged %>%
+  distinct(host_id, id) %>%                    # keep one row per listing per host
+  count(host_id, name = "listings_per_host")   # count listings per host
+
+# group hosts with 10 or more listings
+listings_per_host <- listings_per_host %>%
+  mutate(listings_group =
+           ifelse(
+             listings_per_host >= 10,           # condition: 10+ listings
+             "10+",                             # group them as "10+"
+             as.character(listings_per_host)    # otherwise keep exact number
+           ))
+
+# convert grouped variable into a factor to order on the x-axis
+listings_per_host <- listings_per_host %>%
+  mutate(listings_group = factor(
+    listings_group,
+    levels = c(as.character(1:9), "10+")        # ensure "10+" appears at the end
+  ))
+
+# bar chart showing the number of hosts by listings per host group
+ggplot(data = listings_per_host,
+       mapping = aes(x = listings_group)) +
+  geom_bar() +
+  xlab("Listings per host") +
+  ylab("Number of hosts")
+
+```
+
 ## Hotels per neighbourhood
 
 ## Evolution of number of Airbnb listings
