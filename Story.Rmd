@@ -25,6 +25,20 @@ opts_chunk$set(
   )
 ```
 
+```{r load libraries, include = FALSE}
+library(R.utils)
+library(readr)
+library(dplyr)
+library(tidyr)
+library(cld3)
+library(ggplot2)
+library(scales)
+library(fmsb)
+library(leaflet)
+library(sf)
+library(patchwork)
+```
+
 # Introduction
 
 Zurich is widely recognised as one of the most constrained housing markets in Switzerland. Strong population growth, limited land availability, and a persistently low vacancy rate have made access to long-term rental housing increasingly difficult. For many residents, the process of finding an apartment involves long waiting lists and crowded viewings, reflecting the intense competition for available housing. Ensuring sufficient long-term housing supply has therefore become a key policy challenge for the city.
@@ -39,18 +53,15 @@ This analysis is conducted for a hypothetical client, the City of Zurich, with t
 
 # Data Sources
 
-The analysis is based on publicly available data from **Inside Airbnb** ([https://insideairbnb.com/get-the-data/](https://insideairbnb.com/get-the-data/)), an independent, non-commercial project that provides detailed information on Airbnb listings in cities around the world. The platform compiles data directly from Airbnb’s website and aims to support research and policy discussions around short-term rentals.
+The analysis is based on publicly available data from **Inside Airbnb** (<https://insideairbnb.com/get-the-data/>), an independent, non-commercial project that provides detailed information on Airbnb listings in cities around the world. The platform compiles data directly from Airbnb’s website and aims to support research and policy discussions around short-term rentals.
 
 Two datasets for the city of Zurich are used in this study:
 
-1. **Listings dataset**
-   This dataset contains detailed information on individual Airbnb listings, including their location, room type, price, availability, minimum stay requirements, and host characteristics. It also includes variables such as the number of listings per host and whether a listing is associated with a license.
+1.  **Listings dataset** This dataset contains detailed information on individual Airbnb listings, including their location, room type, price, availability, minimum stay requirements, and host characteristics. It also includes variables such as the number of listings per host and whether a listing is associated with a license.
 
-2. **Reviews dataset**
-   This dataset contains information on guest reviews, including review dates and the number of reviews over time. It allows for an assessment of demand dynamics and guest experiences across listings and neighbourhoods.
+2.  **Reviews dataset** This dataset contains information on guest reviews, including review dates and the number of reviews over time. It allows for an assessment of demand dynamics and guest experiences across listings and neighbourhoods.
 
 The two datasets are merged using the unique listing identifier. This combined dataset enables a joint analysis of spatial distribution, host behaviour, usage intensity, and guest feedback. All data preparation steps, including cleaning and merging, are documented and highlighted in the analysis to ensure full reproducibility.
-
 
 # Objectives and Research Questions
 
@@ -58,32 +69,23 @@ The main objective of this analysis is to support the City of Zurich in evaluati
 
 Specifically, the study addresses the following research questions:
 
-**RQ1:**
-How are Airbnb listings distributed across Zurich neighbourhoods, and which areas show the highest concentration of short-term rentals?
+**RQ1:** How are Airbnb listings distributed across Zurich neighbourhoods, and which areas show the highest concentration of short-term rentals?
 
-**RQ2:**
-Are Airbnb listings more prevalent in certain neighbourhoods, suggesting that short-term rentals may complement local accommodation needs rather than displace long-term housing?
+**RQ2:** Are Airbnb listings more prevalent in certain neighbourhoods, suggesting that short-term rentals may complement local accommodation needs rather than displace long-term housing?
 
-**RQ3:**
-To what extent is Airbnb activity in Zurich driven by a small number of hosts offering multiple listings, indicating a more commercial use of residential properties?
+**RQ3:** To what extent is Airbnb activity in Zurich driven by a small number of hosts offering multiple listings, indicating a more commercial use of residential properties?
 
-**RQ4:**
-Which neighbourhoods exhibit high short-term rental intensity, as reflected by listing availability throughout the year and minimum stay requirements?
+**RQ4:** Which neighbourhoods exhibit high short-term rental intensity, as reflected by listing availability throughout the year and minimum stay requirements?
 
-**RQ5:**
-Do guest reviews suggest that Airbnb listings in Zurich provide positive tourist experiences, and does this vary across neighbourhoods or host types?
+**RQ5:** Do guest reviews suggest that Airbnb listings in Zurich provide positive tourist experiences, and does this vary across neighbourhoods or host types?
 
-**RQ6:**
-Based on listing concentration, host behaviour, and usage intensity, which neighbourhoods would be most affected by potential regulatory measures on short-term rentals?
+**RQ6:** Based on listing concentration, host behaviour, and usage intensity, which neighbourhoods would be most affected by potential regulatory measures on short-term rentals?
 
 Together, these questions provide a structured framework for assessing the role of Airbnb in Zurich and for identifying areas where targeted regulation may be most relevant.
 
-
 # Data Preparation
 
-The cell below was run only once to unpack the reviews data from a .gz
-compressed folder. The code cell unpacked the data and directly deleted
-the compressed files.
+The cell below was run only once to unpack the reviews data from a .gz compressed folder. The code cell unpacked the data and directly deleted the compressed files.
 
 ```{r, eval=FALSE}
 library(R.utils)
@@ -155,7 +157,6 @@ To further investigate unmatched cases, an anti-join is performed between the li
 
 Finally, to improve clarity and avoid ambiguity in the merged dataset, review-related columns are renamed. The review identifier column originating from the reviews table is renamed to review_id, and the review date column is renamed to review_date, making the structure and meaning of the merged data clearer for subsequent analysis.
 
-
 ```{r}
 by <- join_by(id == listing_id)
 
@@ -183,16 +184,15 @@ d.merged <- d.merged %>%
 
 ```
 
-
 # Chapter of choice / Sentiment Analysis
 
 For the chapter of choice, a Sentiment Analysis on the comment is done to augment the merged dataset with a sentiment score. This is the reason why all non-English comments were deleted in the Data Preparation section because the Sentiment Analysis employed can only handle English text and all non-English text is assigned with negative scores even if the comment itself is very positive.
 
 First, we start be creating a reduced data frame that contains only the review identifier and the associated review text. Then, the following text preprocessing steps are done on this comments data frame. All comments are converted to lowercase to ensure that words differing only by capitalization are treated as the same token during analysis. After that, all punctuation is removed so that it does no interfere with word matching in the sentiment lexicon.
 
-With the preprocessing done, the comments are tokenized. Meaning each comment is first split into individiual words, with one word per row, to allow for easier analysis of the data frame. Of course, review_id is kept to later aggregate back to comment level. 
+With the preprocessing done, the comments are tokenized. Meaning each comment is first split into individiual words, with one word per row, to allow for easier analysis of the data frame. Of course, review_id is kept to later aggregate back to comment level.
 
-The Bing sentiment lexicon is then loaded. With this lexicon, the tokenized words are catgorized in a binary fashion, either positive or negative. The tokenized words are joined with this lexicon so that only words appearing in the sentiment dictionary are retained and assigned a corresponding sentiment. Next, the sentiment information is aggregated at the comment level. The categorization of each word is safed into one of two columns, either 'n_positive' or 'n_negative', as counts. These counts are then assigned a score of 1 if the comment contains more positive than negative words, -1 for the opposite case and 0 if the numbers are equal, indicating a neutral comment. 
+The Bing sentiment lexicon is then loaded. With this lexicon, the tokenized words are catgorized in a binary fashion, either positive or negative. The tokenized words are joined with this lexicon so that only words appearing in the sentiment dictionary are retained and assigned a corresponding sentiment. Next, the sentiment information is aggregated at the comment level. The categorization of each word is safed into one of two columns, either 'n_positive' or 'n_negative', as counts. These counts are then assigned a score of 1 if the comment contains more positive than negative words, -1 for the opposite case and 0 if the numbers are equal, indicating a neutral comment.
 
 Lastly, the sentiment score columns are merged with the original 'd.merged' dataset on the review identifier using a left join. Any reviews that did not contain words found in the bing lexicon are assigned a neutral score of 0. This is done so that the score column contains no empty values. The result is the original dataset being augmented with a sentiment score for each review that reflects its overall tone and can be used for visualizations.
 
@@ -394,12 +394,9 @@ ggplot(boxplot_data, aes(x = "", y = value)) +
 
 ```
 
-
-
 ## Number of listings per room type
 
 First we visualize the number of listings according to the room types. For that it a horizontal barchart displaying the ranking was created. From this visual it is evident that the most listings are rented as entire homes/apartments, followed by private rooms. Hotel and shared rooms make a negligible part of the distribution. Private rooms where guests live in the home of the host are making about one quarter of all listings and the majority of listings take up about three quarters. This means that most listings use entire apartment which take up a lot of living space in comparison to private rooms which are used by the people living in them regardless if the private room is rented or not.
-
 
 ```{r}
 library(ggplot2)
@@ -459,21 +456,17 @@ ggplot(
 
 # Neighbourhood group characteristics
 
-In this section the different neighbourhood group characteristics are analyzed. For that the groups are measured according to their total number of hosts and listings aswell as their mean price and mean number of minimum nights of a stay. 
+In this section the different neighbourhood group characteristics are analyzed. For that the groups are measured according to their total number of hosts and listings aswell as their mean price and mean number of minimum nights of a stay.
 
-As an overall insights: 
-* The numbers of listings and hosts tend to move together meaning groups with many listings also usually have many hosts. This may indicate active Airbnb markets instead of a few large-scale hosts.
-* Mean price varies more stronlgy than mean minimum nights. Generally, the minimum nights stay moderate across the city.
-* Each group has a different profile suggesting no uniform market.
+As an overall insights: \* The numbers of listings and hosts tend to move together meaning groups with many listings also usually have many hosts. This may indicate active Airbnb markets instead of a few large-scale hosts. \* Mean price varies more stronlgy than mean minimum nights. Generally, the minimum nights stay moderate across the city. \* Each group has a different profile suggesting no uniform market.
 
 While we will not go into details of all neighbourhood groups, we will highlight some of them.
 
 Kreis 1, the Old Town, displays higher prices, a moderate number of listings and hosts and shorter minimum stays. This is propably because of its smaller size and likely driven by tourists and business travelers looking for a premium markert. Kreis 2 shows a similar profile.
 
-Some of the groups more far away from the city center like Kreis 12 display a very low interest from hosts to publish listings. Kreis 5 displays as similar pattern but with relatively high prices. Kreis 12 displays its more peripheral and residential character as its being the least active Airbnb area. Kreis 5 with its direction to Schlieren where a more industrial area lies, displays less space for Airbnb's. 
+Some of the groups more far away from the city center like Kreis 12 display a very low interest from hosts to publish listings. Kreis 5 displays as similar pattern but with relatively high prices. Kreis 12 displays its more peripheral and residential character as its being the least active Airbnb area. Kreis 5 with its direction to Schlieren where a more industrial area lies, displays less space for Airbnb's.
 
 Kreis 3 and 4 with the popular neighbourhood's have profiles with the most hosts and listings indicating the most active market. Which might be also the most affected by possible changes to renting regulations.
-
 
 ```{r}
 
@@ -538,7 +531,7 @@ for (g in radar_scaled$neighbourhood_group) {
 
 ## Distribution of minimum nights
 
-The histogram shows the distribution of minimum nights requirement for each listing across Zurich. It is based on the listings-level data and restricted to values between 1 and 35 nights. 
+The histogram shows the distribution of minimum nights requirement for each listing across Zurich. It is based on the listings-level data and restricted to values between 1 and 35 nights.
 
 The distribution is highly right-skewed, the majority of listings only require a minimum stay of 1 or 2 nights. This insight suggests that short-term visists might be the favoured type of stay and may displace long-term housing. However, more information is needed to confirm this insight.
 
@@ -573,11 +566,11 @@ ggplot(
 
 ## Minimum nights per neighbourhood map
 
-The visual below deepens our knowledge of the previous insights regarding minimum nights per stay. It displays the mean minimum nights of all listings per neighbourhood as a bubble map. The bigger the bubble the higher the minimum nights mean value. 
+The visual below deepens our knowledge of the previous insights regarding minimum nights per stay. It displays the mean minimum nights of all listings per neighbourhood as a bubble map. The bigger the bubble the higher the minimum nights mean value.
 
 Most of the neighbourhoods have a mean between 1 and 19. The closer you get to the Old Town, the lower the mean of the required minimum stay gets. Neighbourhood *Saatlen*, with a mean of 43.5, is the only neighbourhood where the mean minimum stay is over 19.
 
-With this visualization it is possible double down on some of the insights and hyptotheses from the previous section. Most of the listings cater for short-term rentals, possible for tourists or business clients. 
+With this visualization it is possible double down on some of the insights and hyptotheses from the previous section. Most of the listings cater for short-term rentals, possible for tourists or business clients.
 
 ```{r}
 
@@ -664,15 +657,13 @@ leaflet(geo_min_4326) %>%
 
 ```
 
-
- ## Mean price and number of stays per neighbourhood maps
+\## Mean price and number of stays per neighbourhood maps
 
 The visual below displays once the mean price and once the number of stays each per neighbourhood. The higher the value the lighter the coloring of the neighbourhood.
 
 The prices tend to be higher the closer the neighbourhood group is to the city center. This does not come as a surprise as most people want to minimize their time spent traveling to the city center for their stays. Therefore, listings close to the city center are desired and prices reflect this demand.
 
 However, the number of stays per neighbourhoods reveals, that while the city center is the most popular according to number of stays, other neighbourhoods in close proximity also record a lot of bookings and are quite popular among guests.
-
 
 ```{r}
 listings <- d.merged %>%
@@ -716,15 +707,13 @@ p_stays <- ggplot(geo_stats) +
 p_price + p_stays + plot_annotation(title = "Neighbourhoods in Zürich")
 ```
 
-
-
 # Reviews analysis maps
 
-Below the two maps visualize negative reviews. The left map displays the absolute number of negative reviews, while the right map shows the proportion of negative reviews. 
+Below the two maps visualize negative reviews. The left map displays the absolute number of negative reviews, while the right map shows the proportion of negative reviews.
 
 According to the left map, on first view one might believe that the city center receives by far the most negative reviews. But the city center is also the place with the most amount of stays and therefore the most reviews. Thus the proportion of negative reviews must be taken into account, which displays a more nuanced picture.
 
-The city center is still one of the neighbourhoods with the highest percentage of negative reviews. Yet, there are much more neighbourhoods with a percentage above 2% and the neighbourhood *Friesenberg* even has a higher percentage than the city center. 
+The city center is still one of the neighbourhoods with the highest percentage of negative reviews. Yet, there are much more neighbourhoods with a percentage above 2% and the neighbourhood *Friesenberg* even has a higher percentage than the city center.
 
 Overall, the share of negative reviews is much more informative than the absolute number. Although there is spatial variation in the share of negative reviews, the absolute levels are low, with no neighbourhood exceeding approximately 2.5% negative feedback, suggesting generally high guest satisfaction citywide.
 
@@ -788,10 +777,6 @@ p_count + p_share + plot_annotation(
 
 ```
 
-
-
-
-
 ```{r}
 
 min_nights <- d.merged %>%
@@ -806,9 +791,6 @@ min_nights <- d.merged %>%
 print(n = 53, min_nights)
 
 ```
-
-
-
 
 # Model
 
@@ -848,13 +830,11 @@ Dates ( YYYY-MM-DD) or geographic locations, both are even better
 
 Can be simple
 
-Join the two data sets and highlight in your report where you have done
-this, showing the line of code where the joining is performed
+Join the two data sets and highlight in your report where you have done this, showing the line of code where the joining is performed
 
 Ideally different formats and different sources
 
-**Content** Comprehensive analysis which we will present to a hypothetical
-client
+**Content** Comprehensive analysis which we will present to a hypothetical client
 
 In depth examination of problem being adressed
 
@@ -862,21 +842,17 @@ PDF or HTML with Rmarkdwon or quarto
 
 Clear and comprehensible to all readers
 
-**Prepare the data for the analysis** Cleaned before they are merged and
-analysis begins
+**Prepare the data for the analysis** Cleaned before they are merged and analysis begins
 
 You can hide code but highlight in the text where the data is merged
 
-Please explain in words (not as code) what you have done for data
-preparation
+Please explain in words (not as code) what you have done for data preparation
 
-**Visualize the data appropiately**
-Analyse data using summary statistics
+**Visualize the data appropiately** Analyse data using summary statistics
 
 Graphs
 
-*Recommendations for plots*
-No pie charts
+*Recommendations for plots* No pie charts
 
 Alpha level to add transparency to points /lines
 
@@ -890,47 +866,35 @@ Shall all observations and infos, not just mean and standard deviation
 
 Not too many dimensions in a graph
 
-**Fit the model**
-Fit a model and show result + interpet it
+**Fit the model** Fit a model and show result + interpet it
 
 Produce graphs (e.g. predictions or residual diagnostics) for your model fits
 
 Possibility: compare several models via CV
 
-**Chapter of choice**
-Use new package that was not mentioned in the main part of the course (cant be data
-manipulation, visualisation using ggplot2, regular expressions and reporting using Rmarkdown does not count and perform a task that we have not discussed in the course
+**Chapter of choice** Use new package that was not mentioned in the main part of the course (cant be data manipulation, visualisation using ggplot2, regular expressions and reporting using Rmarkdown does not count and perform a task that we have not discussed in the course
 
 No new statistical or machine learning method
 
 Method to prepare or display data
 
-**Generative AI**
-Quarter to half a page about which tools you have used
+**Generative AI** Quarter to half a page about which tools you have used
 
-What have you used it for? For what kind of tasks turned they out to be
-helpful?
+What have you used it for? For what kind of tasks turned they out to be helpful?
 
 How do you check correctness of the answer?
 
 What did not work?
 
-**Sell the story**
-Complete, easy to read, thread (what are you doing, why, conclusions, interpretations, overview . . . )
+**Sell the story** Complete, easy to read, thread (what are you doing, why, conclusions, interpretations, overview . . . )
 
-• Source of the data.
-• Objectives and hypotheses of the analysis.
-• Interpretation of each step.
-• Conclusions drawn from the analysis.
-• Potential limitations of the study.
+• Source of the data. • Objectives and hypotheses of the analysis. • Interpretation of each step. • Conclusions drawn from the analysis. • Potential limitations of the study.
 
-**Comments**
-Comment a lot
+**Comments** Comment a lot
 
 Check coding style
 
-**Additional requirements**
-a readme.txt file;
+**Additional requirements** a readme.txt file;
 
 structured folders (e.g. “Data”, “Scripts”, . . . )
 
