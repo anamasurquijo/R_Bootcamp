@@ -83,6 +83,24 @@ Specifically, the study addresses the following research questions:
 
 Together, these questions provide a structured framework for assessing the role of Airbnb in Zurich and for identifying areas where targeted regulation may be most relevant.
 
+# Variables Overview
+
+**listings.csv**
+```{r variables_overview_listings}
+
+d.listings <- read_csv("Data/listings.csv")
+glimpse(d.listings)
+
+```
+
+**reviews.csv**
+```{r variables_overview_reviews}
+
+d.reviews <- read_csv("Data/reviews.csv")
+glimpse(d.reviews)
+
+```
+
 # Data Preparation
 
 The cell below was run only once to unpack the reviews data from a .gz compressed folder. The code cell unpacked the data and directly deleted the compressed files.
