@@ -839,18 +839,23 @@ library(dplyr)
 # load neighbourhood polygons (GeoJSON file)
 neighbourhoods <- st_read("Data/neighbourhoods.geojson")
 
-# get hotel locations from OpenStreetMap (tourism = hotel)
-hotels <- opq("Zurich, Switzerland") %>%
-  add_osm_feature(key = "tourism", value = "hotel") %>%  # select hotels
-  osmdata_sf() %>%                                      # download spatial data
-  `[[`("osm_points")                                    # keep only points
+# get hotels from OpenStreetMap
+osm_hotels <- opq("Zurich, Switzerland") %>%
+  add_osm_feature(key = "tourism", value = "hotel") %>%
+  osmdata_sf()
+
+# keep hotel polygons and convert each polygon to ONE point
+hotels <- st_point_on_surface(osm_hotels$osm_polygons)
 
 # simple interactive map with neighbourhoods and hotels
 leaflet() %>%
-  addTiles() %>%                          # add base map
-  addPolygons(data = neighbourhoods) %>%  # add neighbourhood boundaries
-  addCircleMarkers(data = hotels)         # add hotel locations
-
+  addTiles() %>%
+  addPolygons(
+    data = neighbourhoods, # add base map
+    weight = 1,            # thinner borders
+    fill = FALSE           # no fill
+  ) %>%
+  addCircleMarkers(data = hotels, radius = 0.5) #small points
 
 ```
 
