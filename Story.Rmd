@@ -454,7 +454,7 @@ ggplot(
   
 ```
 
-# Neighbourhood group characteristics
+## Neighbourhood group characteristics
 
 In this section the different neighbourhood group characteristics are analyzed. For that the groups are measured according to their total number of hosts and listings aswell as their mean price and mean number of minimum nights of a stay.
 
@@ -529,7 +529,7 @@ for (g in radar_scaled$neighbourhood_group) {
 
 ```
 
-## Distribution of minimum nights
+### Distribution of minimum nights
 
 The histogram shows the distribution of minimum nights requirement for each listing across Zurich. It is based on the listings-level data and restricted to values between 1 and 35 nights.
 
@@ -564,7 +564,7 @@ ggplot(
 
 ```
 
-## Minimum nights per neighbourhood map
+### Minimum nights per neighbourhood map
 
 The visual below deepens our knowledge of the previous insights regarding minimum nights per stay. It displays the mean minimum nights of all listings per neighbourhood as a bubble map. The bigger the bubble the higher the minimum nights mean value.
 
@@ -657,7 +657,7 @@ leaflet(geo_min_4326) %>%
 
 ```
 
-\## Mean price and number of stays per neighbourhood maps
+### Mean price and number of stays per neighbourhood maps
 
 The visual below displays once the mean price and once the number of stays each per neighbourhood. The higher the value the lighter the coloring of the neighbourhood.
 
@@ -707,7 +707,7 @@ p_stays <- ggplot(geo_stats) +
 p_price + p_stays + plot_annotation(title = "Neighbourhoods in Zürich")
 ```
 
-# Reviews analysis maps
+## Reviews analysis maps
 
 Below the two maps visualize negative reviews. The left map displays the absolute number of negative reviews, while the right map shows the proportion of negative reviews.
 
@@ -791,14 +791,21 @@ min_nights <- d.merged %>%
 print(n = 53, min_nights)
 
 ```
+## Listings per host
 
-# Model
+## Hotels per neighbourhood
+
+## Evolution of number of Airbnb listings
+
+## Evolution of reviews
+
+## Model - Prediction of reviews
 
 # Conclusions
 
 # Potential Limitations
 
-# GenAI
+# Use of GenAI
 
 Ideas of questions to answer:
 
@@ -810,7 +817,7 @@ Ideas of questions to answer:
 
 **What did not work?**
 
-# Requirements
+# Requirements (will be deleted)
 
 We cross them as soon as fulfilled:
 
