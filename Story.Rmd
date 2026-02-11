@@ -17,7 +17,7 @@ output:
 ```{r knitr-setup, include = FALSE}
 library(knitr)
 opts_chunk$set(
-  echo = TRUE,       # do not display R code
+  echo = TRUE,       # display R code, but above we hide it
   include = TRUE,     # display R result
   message = FALSE,
   warning = FALSE,
@@ -173,7 +173,7 @@ To further investigate unmatched cases, an anti-join is performed between the li
 
 Finally, to improve clarity and avoid ambiguity in the merged dataset, review-related columns are renamed. The review identifier column originating from the reviews table is renamed to review_id, and the review date column is renamed to review_date, making the structure and meaning of the merged data clearer for subsequent analysis.
 
-```{r}
+```{r,class.source = "fold-show"}
 by <- join_by(id == listing_id)
 
 d.merged <- d.listings %>%
@@ -900,15 +900,36 @@ leaflet() %>%
 
 # Use of GenAI
 
-Ideas of questions to answer:
+**Tools used**
+
+- ChatGPT
+- Gemini
 
 **What have you used it for?**
 
+One of our main goals in this project was to use as little GenAI as possible in order to maximize our learning experience. We realized that in the previous semester we relied too heavily on such tools and did not achieve the learning progress we had hoped for. Therefore, we consciously decided to work independently and solve most problems ourselves.
+
+Our main resources were the slides from the ILIAS Introduction to R course and the materials provided during the Bootcamp. Additionally, we created a dedicated project space within the GenAI tools to keep our work organized. We uploaded the course slides to these tools so that, whenever we had doubts or wanted to verify our approach, the responses would be aligned with the concepts covered in class.
+
+GenAI was particularly helpful in explaining concepts that we did not fully understand. Rather than using it to generate complete solutions, we mainly used it as a supportive learning tool.
+
+Another important use was improving the structure and clarity of our written analysis. We first drafted our ideas in our own English and then used GenAI to correct grammar, improve wording, and adjust the tone to better address our client.
+
 **For what kind of tasks turned they out to be helpful?**
+
+- Correcting language, grammar, and writing style
+- Structuring and refining our analysis in a clearer and more professional way
+- Supporting more advanced R functions or improving visual aspects of graphs (e.g., formatting or color adjustments)
 
 **How do you check correctness of the answer?**
 
+We verified the correctness of GenAI outputs primarily by running the suggested code and evaluating whether the results were reasonable. In addition, we compared explanations and approaches with the course slides and relevant cheat sheets.
+
+By critically reviewing both the logic and the results, we ensured that we fully understood the solutions before incorporating them into our project.
+
 **What did not work?**
+
+Since we used GenAI selectively and always provided clear context and our own preliminary work, the tools generally worked well. We did not encounter major issues. However, we consistently evaluated the responses critically to ensure correctness and maintain academic integrity.
 
 # Requirements (will be deleted)
 
