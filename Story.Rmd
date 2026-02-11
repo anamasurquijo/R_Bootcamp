@@ -87,35 +87,30 @@ The two datasets are merged using the unique listing identifier. This combined d
 
 ## Data Preparation and Transformations
 
-**Unpacking**
-The cell below was run only once to unpack the reviews data from a .gz compressed folder. The code cell unpacked the data and directly deleted the compressed files.
+### Importing and Inspecting the data
 
-```{r, eval=FALSE}
+**Unpacking** The cell below was run only once to unpack the reviews data from a .gz compressed folder. The code cell unpacked the data and directly deleted the compressed files.
+
+```{r unpacking, eval=FALSE}
 library(R.utils)
 gunzip("Data/reviews.csv.gz")
 ```
 
-**Variables Overview**
+First, the listings and reviews datasets are imported from CSV files using read_csv and stored as d.listings and d.reviews. Let us get a first import the csvs and get an overview of how the datasets look like to get a first impression. For this we start importing and using the glimpse function of the dplyr package as the head and str functions of base R do not make it that clean.
 
-*listings.csv*
-
-```{r variables_overview_listings}
-
+```{r importing_listings}
 d.listings <- read_csv("Data/listings.csv")
 glimpse(d.listings)
-
 ```
 
-*reviews.csv*
+Now let us import and inspect the reviews.csv.
 
-```{r variables_overview_reviews}
-
+```{r importing_reviews}
 d.reviews <- read_csv("Data/reviews.csv")
 glimpse(d.reviews)
-
 ```
 
-First, the listings and reviews datasets are imported from CSV files using read_csv and stored as d.listings and d.reviews. After loading the listings data, the amount of missing data is examined by calculating both the absolute number of missing values in each column and the proportion of missing values relative to the total number of observations. This provides an overview of data completeness and helps identify variables that may require cleaning or removal.
+After loading the listings data, the amount of missing data is examined by calculating both the absolute number of missing values in each column and the proportion of missing values relative to the total number of observations. This provides an overview of data completeness and helps identify variables that may require cleaning or removal.
 
 Based on this inspection, the column license is removed from the listings dataset because it contains only missing values and therefore provides no usable information for the analysis. The remaining missing values in selected numeric variables are then addressed by replacing NA values with zeros for price and reviews_per_month, ensuring that these variables contain valid numeric values and can be used in subsequent analyses. The last_review variable is intentionally left unchanged, as imputing a date where none exists would not be meaningful.
 
@@ -128,9 +123,6 @@ library(readr)
 library(dplyr)
 library(tidyr)
 library(cld3)
-
-d.listings <- read_csv("Data/listings.csv")
-d.reviews <- read_csv("Data/reviews.csv")
 
 # missing data in each column
 colSums(is.na(d.listings))
@@ -169,7 +161,6 @@ d.listings %>%
   distinct()
 
 ```
-
 
 In the next cell below, the two data sets were merged.
 
@@ -413,6 +404,13 @@ ggplot(boxplot_data, aes(x = "", y = value)) +
   )
 
 ```
+
+## Further Data Cleaning
+
+```{r}
+
+```
+
 ## Outlier detection
 
 ## Correlation Analysis
