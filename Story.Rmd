@@ -4,6 +4,7 @@ author: "Ana Mas Urquijo, Azeglio Martinelli"
 date: "`r Sys.Date()`"
 output:
   html_document:
+    code_folding: hide
     highlight: tango
     number_sections: true
     toc: true               # table of contents
@@ -16,7 +17,7 @@ output:
 ```{r knitr-setup, include = FALSE}
 library(knitr)
 opts_chunk$set(
-  echo = FALSE,       # do not display R code
+  echo = TRUE,       # do not display R code
   include = TRUE,     # display R result
   message = FALSE,
   warning = FALSE,
@@ -142,7 +143,7 @@ colSums(is.na(d.reviews))
 colMeans(is.na(d.reviews))
 
 d.reviews <- d.reviews %>% 
-  replace_na(list(comments = 'Unkown'))
+  replace_na(list(comments = 'Unknown'))
 
 # filter out non-English comments
 d.reviews_eng <- d.reviews %>%
