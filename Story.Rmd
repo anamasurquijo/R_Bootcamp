@@ -204,7 +204,7 @@ d.merged <- d.merged %>%
 
 For the chapter of choice, a Sentiment Analysis on the comment is done to augment the merged dataset with a sentiment score. This is the reason why all non-English comments were deleted in the Data Preparation section because the Sentiment Analysis employed can only handle English text and all non-English text is assigned with negative scores even if the comment itself is very positive.
 
-First, we start be creating a reduced data frame that contains only the review identifier and the associated review text. Then, the following text preprocessing steps are done on this comments data frame. All comments are converted to lowercase to ensure that words differing only by capitalization are treated as the same token during analysis. After that, all punctuation is removed so that it does no interfere with word matching in the sentiment lexicon.
+First, we start by creating a reduced data frame that contains only the review identifier and the associated review text. Then, the following text preprocessing steps are done on this comments data frame. All comments are converted to lowercase to ensure that words differing only by capitalization are treated as the same token during analysis. After that, all punctuation is removed so that it does no interfere with word matching in the sentiment lexicon.
 
 With the preprocessing done, the comments are tokenized. Meaning each comment is first split into individiual words, with one word per row, to allow for easier analysis of the data frame. Of course, review_id is kept to later aggregate back to comment level.
 
@@ -265,6 +265,21 @@ d.merged <- d.merged %>%
   mutate(
     bing_score = if_else(is.na(bing_score), 0L, bing_score)
   )
+glimpse(d.merged)
+
+listing_sentiment <- d.merged %>%
+  group_by(id) %>%
+  summarise(
+    mean_bing_score = mean(bing_score[!is.na(review_id)], na.rm = TRUE),
+    n_reviews = sum(!is.na(review_id)),
+    .groups = "drop"
+  )
+
+d.listings_with_sentiment <- d.listings %>%
+  left_join(listing_sentiment, by = "id")
+
+glimpse(d.listings_with_sentiment)
+
 
 ```
 
@@ -893,6 +908,51 @@ leaflet() %>%
 ## Evolution of reviews
 
 # Model - Prediction of reviews
+
+## Train-Test Split Strategy
+
+To evaluate model performance objectively, we split the data into training (80%) and testing (20%) sets. The training set is used to fit models, while the testing set provides an unbiased assessment of how well models generalize to new data. This prevents overfitting, ensures fair comparison across models, and better reflects real operational conditions. The split is stratified so both sets preserve the same balance of high and low demand.
+
+From a business perspective, this matters because a model that performs well in training but poorly on unseen data would be unreliable for planning bike availability, rebalancing, or staffing. The test set helps ensure we deploy models that work in practice, not just on paper.
+```{r train-test-split, cache=TRUE, dependson="data-prep",eval=FALSE}
+# Create stratified split for high_demand to ensure balanced classes
+train_idx <- createDataPartition(bike$high_demand, p = 0.8, list = FALSE)
+train <- bike[train_idx, ]
+test <- bike[-train_idx, ]
+
+cat(
+  "Training observations: ", nrow(train), "\n",
+  "Testing observations: ", nrow(test), "\n\n",
+  "Class distribution in training and test sets:\n",
+  paste(capture.output(prop.table(table(train$high_demand))), collapse = "\n"),
+  paste(capture.output(prop.table(table(test$high_demand))), collapse = "\n")
+)
+```
+
+
+```{r,class.source = "fold-show",eval=FALSE}
+
+d.model <- d.listings_with_sentiment %>%
+  filter(price > 0)
+
+d.model <- d.model %>%
+  mutate(log_price = log(price))
+
+model2 <- lm(log_price ~ room_type +
+                           neighbourhood +
+                           mean_bing_score +
+                           n_reviews +
+                           calculated_host_listings_count +
+                           minimum_nights +
+                           availability_365,
+             data = d.model)
+
+summary(model2)
+round((exp(coef(model2)) - 1) * 100, 1)
+
+
+
+```
 
 # Conclusions
 
