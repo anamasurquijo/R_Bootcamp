@@ -871,8 +871,34 @@ ggplot(data = listings_per_host,
   xlab("Listings per host") +
   ylab("Number of hosts")
 
-```
 
+# create mean and median lines and legend
+stats_lines <- data.frame(
+  statistic = c(
+    paste0("Mean = ", round(mean(listings_per_host$listings_per_host), 2)),
+    paste0("Median = ", median(listings_per_host$listings_per_host))
+  ),
+  value = c(
+    mean(listings_per_host$listings_per_host),
+    median(listings_per_host$listings_per_host)
+  )
+)
+
+ggplot(listings_per_host, aes(x = listings_group)) +
+  geom_bar() +
+  
+  geom_vline(data = stats_lines,
+             aes(xintercept = value,
+                 color = statistic,
+                 linetype = statistic),
+             linewidth = 1) +
+  
+  labs(color = "Statistic",
+       linetype = "Statistic") +
+  
+  xlab("Listings per host") +
+  ylab("Number of hosts")
+```
 ## Hotels per neighbourhood
 
 ```{r hotels_per_neighbourhood}
