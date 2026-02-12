@@ -906,6 +906,25 @@ leaflet() %>%
 
 ## Evolution of number of Airbnb listings
 
+```{r}
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+
+listings_per_year <- d.merged %>%
+  filter(!is.na(review_date)) %>%
+  mutate(year = year(review_date)) %>%
+  group_by(year) %>%
+  summarise(n_listings = n_distinct(id))
+
+ggplot(listings_per_year, aes(x = year, y = n_listings)) +
+  geom_area() +
+  labs(
+    title = "Evolution of Airbnb Listings",
+    x = "Year",
+    y = "Number of Listings"
+  )
+```
 
 
 ## Evolution of reviews
