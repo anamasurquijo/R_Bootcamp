@@ -286,6 +286,7 @@ glimpse(d.listings_with_sentiment)
 
 With the merged data in the dataset 'r d.merged' as solid basis is provided for the analysis. The next chapter dives into the data's characteristics, patterns and trends.
 
+
 ## Summary Statistics of data
 
 ```{r}
@@ -926,8 +927,28 @@ ggplot(listings_per_year, aes(x = year, y = n_listings)) +
   )
 ```
 
-
 ## Evolution of reviews
+```{r}
+reviews_year <- d.merged %>%
+  filter(!is.na(review_date)) %>%
+  mutate(year = year(review_date)) %>%
+  group_by(year, bing_score) %>%
+  summarise(n_reviews = n(), .groups = "drop")
+
+ggplot(reviews_year,
+       aes(x = year, y = n_reviews, fill = factor(bing_score))) +
+  geom_area() +
+  scale_fill_manual(
+    values = c("-1" = "red",
+               "0"  = "yellow",
+               "1"  = "green")
+  ) +
+  labs(
+    title = "Evolution of Reviews Over Time",
+    x = "Year",
+    y = "Number of Reviews"
+  )
+```
 
 # Model - Prediction of price
 
