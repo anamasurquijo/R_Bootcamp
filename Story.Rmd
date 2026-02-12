@@ -966,7 +966,7 @@ hotels <- st_point_on_surface(osm_hotels$osm_polygons)
 
 # --- Airbnb: use d.merged, only 2025, one row per apartment id  <-- CAMBIADO
 airbnb_2025 <- d.merged %>%                                    # <-- CAMBIADO
-  filter(format(review_date, "%Y") == "2025") %>%              # <-- CAMBIADO
+  filter(year(review_date) == 2025) %>%
   distinct(id, .keep_all = TRUE)                               # <-- CAMBIADO
 
 # simple interactive map with neighbourhoods and hotels
@@ -1003,6 +1003,51 @@ d.merged %>%
   filter(format(review_date, "%Y") == "2025") %>%
   summarise(n = n_distinct(id))
 ```  
+```{r}
+library(sf)
+library(dplyr)
+
+sf::sf_use_s2(FALSE)
+
+# 1) Renombrar el barrio del GeoJSON para evitar neighbourhood.x / neighbourhood.y
+neighbourhoods2 <- neighbourhoods %>%
+  rename(neigh_poly = neighbourhood)
+
+# 2) Airbnb 2025 -> puntos sf (1 fila por listing id)
+airbnb_2025_sf <- d.merged %>%
+  filter(format(review_date, "%Y") == "2025") %>%
+  distinct(id, .keep_all = TRUE) %>%
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
+
+# 3) Contar Airbnbs 2025 por barrio
+airbnbs_by_neigh <- neighbourhoods2 %>%
+  st_join(airbnb_2025_sf, join = st_contains) %>%
+  st_drop_geometry() %>%
+  count(neigh_poly, name = "n_airbnbs_2025")
+
+# 4) Contar Hoteles por barrio (hotels ya es sf de puntos)
+hotels_by_neigh <- neighbourhoods2 %>%
+  st_join(hotels, join = st_contains) %>%
+  st_drop_geometry() %>%
+  count(neigh_poly, name = "n_hotels")
+
+# 5) Tabla final (incluye barrios con 0)
+comparison <- neighbourhoods2 %>%
+  st_drop_geometry() %>%
+  distinct(neigh_poly) %>%
+  left_join(airbnbs_by_neigh, by = "neigh_poly") %>%
+  left_join(hotels_by_neigh, by = "neigh_poly") %>%
+  mutate(
+    n_airbnbs_2025 = coalesce(n_airbnbs_2025, 0),
+    n_hotels = coalesce(n_hotels, 0),
+    airbnbs_per_hotel = ifelse(n_hotels == 0, NA, n_airbnbs_2025 / n_hotels)
+  ) %>%
+  arrange(desc(airbnbs_per_hotel))
+
+comparison
+
+```
+
 
 ## Evolution of number of Airbnb listings
 
