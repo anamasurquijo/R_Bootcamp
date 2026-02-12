@@ -947,6 +947,63 @@ leaflet() %>%
 
 ```
 
+```{r}
+library(sf)
+library(leaflet)
+library(osmdata)
+library(dplyr)
+
+# load neighbourhood polygons (GeoJSON file)
+neighbourhoods <- st_read("Data/neighbourhoods.geojson")
+
+# get hotels from OpenStreetMap
+osm_hotels <- opq("Zurich, Switzerland") %>%
+  add_osm_feature(key = "tourism", value = "hotel") %>%
+  osmdata_sf()
+
+# keep hotel polygons and convert each polygon to ONE point
+hotels <- st_point_on_surface(osm_hotels$osm_polygons)
+
+# --- Airbnb: use d.merged, only 2025, one row per apartment id  <-- CAMBIADO
+airbnb_2025 <- d.merged %>%                                    # <-- CAMBIADO
+  filter(format(review_date, "%Y") == "2025") %>%              # <-- CAMBIADO
+  distinct(id, .keep_all = TRUE)                               # <-- CAMBIADO
+
+# simple interactive map with neighbourhoods and hotels
+leaflet() %>%
+  addTiles() %>%
+  addPolygons(
+    data = neighbourhoods, # add base map
+    weight = 2,            # thinner borders
+    fill = 1
+  ) %>%
+  addCircleMarkers(
+    data = hotels, 
+    radius = 2,
+    fillOpacity = 1,
+    color = "black"
+  ) %>% 
+
+  # Airbnb listings (filtered 2025, unique ids)  <-- CAMBIADO
+  addCircleMarkers(
+    data = airbnb_2025,                                        # <-- CAMBIADO
+    lng = ~longitude,
+    lat = ~latitude,
+    radius = 2,
+    stroke = FALSE,
+    fillOpacity = 1,
+    color = "red"
+  )
+
+```
+
+```{r}
+n_distinct(d.merged$id)
+d.merged %>%
+  filter(format(review_date, "%Y") == "2025") %>%
+  summarise(n = n_distinct(id))
+```  
+
 ## Evolution of number of Airbnb listings
 
 ```{r}
