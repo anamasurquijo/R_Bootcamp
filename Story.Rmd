@@ -974,7 +974,7 @@ cat(
 
 ## Model
 
-```{r,class.source = "fold-show",eval=FALSE}
+```{r,class.source = "fold-show"}
 
 d.model <- d.listings_with_sentiment %>%
   filter(price > 0)
@@ -993,9 +993,6 @@ model2 <- lm(log_price ~ room_type +
 
 summary(model2)
 round((exp(coef(model2)) - 1) * 100, 1)
-
-
-
 ```
 
 # Conclusions
