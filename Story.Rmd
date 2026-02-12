@@ -197,6 +197,7 @@ anti_join(d.listings, d.reviews, by = c("id" = "listing_id")) |>
 # rename different review columns
 d.merged <- d.merged %>% 
   rename(review_id = id.y, review_date = date)
+glimpse(d.merged)
 
 ```
 
@@ -905,9 +906,11 @@ leaflet() %>%
 
 ## Evolution of number of Airbnb listings
 
+
+
 ## Evolution of reviews
 
-# Model - Prediction of reviews
+# Model - Prediction of price
 
 ## Train-Test Split Strategy
 
@@ -929,6 +932,7 @@ cat(
 )
 ```
 
+## Model
 
 ```{r,class.source = "fold-show",eval=FALSE}
 
@@ -957,6 +961,13 @@ round((exp(coef(model2)) - 1) * 100, 1)
 # Conclusions
 
 # Potential Limitations
+Static pricing information: The dataset contains only one price per listing, although Airbnb prices are dynamic and may vary over time depending on demand, seasonality, and availability. Therefore, the observed price may not fully reflect actual pricing strategies throughout the year.
+
+Limited property characteristics: The dataset does not provide detailed information on property size, number of rooms, number of beds, capacity (number of guests), or number of bathrooms. These factors are likely important determinants of price and may lead to omitted variable bias in the regression analysis.
+
+Simplified sentiment analysis: Sentiment was measured using a basic lexicon-based approach (Bing dictionary). This method does not account for context, negation, or sarcasm. For example, phrases such as “not good” may be incorrectly classified as positive due to the presence of the word “good,” ignoring the negation.
+
+Exclusion of non-English reviews: Non-English comments were removed prior to sentiment analysis. As a result, reviews written in German, Swiss German, or other languages are not included, which may bias the sentiment measure and limit representativeness.
 
 # Use of GenAI
 
