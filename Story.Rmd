@@ -38,6 +38,7 @@ library(fmsb)
 library(leaflet)
 library(sf)
 library(patchwork)
+library(lubridate)
 ```
 
 # Introduction
@@ -90,7 +91,7 @@ The two datasets are merged using the unique listing identifier. This combined d
 
 ### Importing and Inspecting the data
 
-**Unpacking** The cell below was run only once to unpack the reviews data from a .gz compressed folder. The code cell unpacked the data and directly deleted the compressed files.
+**Unpacking**: The cell below was run only once to unpack the reviews data from a .gz compressed folder. The code cell unpacked the data and directly deleted the compressed files.
 
 ```{r unpacking, eval=FALSE}
 library(R.utils)
@@ -103,30 +104,16 @@ First, the listings and reviews datasets are imported from CSV files using read_
 d.listings <- read_csv("Data/listings.csv")
 glimpse(d.listings)
 ```
-**Data Type Transformations**
-The first impression tells us, that the license columnn might completely be empty.
-Furthermore, we see that we have:
-- <dbl>: Double types, which are numeric values with decimals for continuous numbers.
-- <chr>: Character type, which are text values (strings).
-- <date>: Date type, which is stored in a specific date format.
-- <lgl>:Logical type, storing TRUE or FALSE values
+
+**Data Type Transformations** The first impression tells us, that the license columnn might completely be empty. Furthermore, we see that we have: - <dbl>: Double types, which are numeric values with decimals for continuous numbers. - <chr>: Character type, which are text values (strings). - <date>: Date type, which is stored in a specific date format. - <lgl>:Logical type, storing TRUE or FALSE values
 
 We convert the variables room_type, neighbourhood, and neighbourhood_group to factors because they represent categorical rather than numerical information. This ensures they are treated as discrete groups in the analysis and allows the model to estimate category-specific effects appropriately.
 
 The variables id and host_id are converted to character because they serve as unique identifiers and do not carry numerical meaning.
 
-**Missing Data**
-After converting the required types, the amount of missing data is examined by
-- calculating the absolute number of missing values in each column
-- visualizing the proportion of missing values relative to the total number of observations
-- missing data visualitazion to understand if missing data is systematic
+**Missing Data** After converting the required types, the amount of missing data is examined by - calculating the absolute number of missing values in each column - visualizing the proportion of missing values relative to the total number of observations - visualizing the missing patterns to understand if missing data is systematic
 
 This provides an overview of data completeness and helps identify variables that may require cleaning or removal.
-
-Based on this inspection, the column license is removed from the listings dataset, as we assumed at the beginning it contains only missing values and therefore provides no usable information for the analysis.
-
-The remaining missing values in selected numeric variables are then addressed by replacing NA values with zeros for price and reviews_per_month, ensuring that these variables contain valid numeric values and can be used in subsequent analyses. It is important to mention, that in the part to analyse the price, we will need to filter by price > 0 in order the analysis makes completely sense.
-The last_review variable is intentionally left unchanged, as imputing a date where none exists would not be meaningful.
 
 ```{r listings_transformations}
 
@@ -150,6 +137,8 @@ d.listings %>%
   arrange(desc(n_missing))
 ```
 
+Based on this inspection, the column license will be removed from the listings dataset, as our assumption that it only contained missing values was correct. For reviews_per_month and last_review the same amount of observations are missing, which makes us assume, that these will probably be from the same airbnbs, that probably never had a review at all. The missing price is also close to the reviews missing. But lets look at how much % these missing observations actually are:
+
 ```{r missing_percentage}
 d.listings %>%
   summarise(across(everything(), ~ mean(is.na(.x)))) %>%
@@ -168,6 +157,7 @@ d.listings %>%
        y = NULL)
 ```
 
+The percentages are quite notable, for the 3 almost 25%. But are the observations of price missing the same as for the other 2? Let's check for this the missing pattern visualization and also to see, if the data is missing systematically.
 
 ```{r missing_pattern}
 d.listings %>%
@@ -190,65 +180,86 @@ d.listings %>%
   theme(axis.text.x = element_text(angle = 90))
 ```
 
+The visualization clearly shows, that the missing price observations are mostly not the same airbnbs as the ones that did not have reviews.
 
+While we will replace the missing values of reviews per month variables with zero, we will delete all the airbnbs with price 0, as throughout the analysis, the price is one of the most important aspects and furthermore the fact of not having a price probably means that the airbnb was actually either not available or not on rent at the moment. The last_review variable is intentionally left unchanged, as imputing a date where none exists would not be meaningful.
 
+Finally, the listings dataset is checked for duplicate listing identifiers. This is done by counting how often each id appears, filtering for those that occur more than once, and displaying only the distinct duplicated entries. This step verifies whether the primary key in the listings data is unique, which is important for reliable joins and further analysis.
 
-```{r importing_reviews}
-# drop column license as it contains only NA values
+```{r listings_missing}
+# Remove column 'license' (contains only missing values)
 d.listings <- d.listings %>% 
   select(-license)
 
-# replace NA's in other columns so that we have valid values for analysis (except for last_review because here it does not make sense to enter a somewhat valid date for NA values)
+# Replace missing values in reviews_per_month (0 = no reviews)
 d.listings <- d.listings %>% 
-  replace_na(list(price = 0, reviews_per_month = 0))
+  replace_na(list(reviews_per_month = 0))
+
+# Remove listings with missing prices
+d.listings <- d.listings %>% 
+  filter(!is.na(price))
+
+# Check number of duplicate listing IDs
+d.listings %>%
+  summarise(n_duplicate_ids = sum(duplicated(id)))
+
 ```
-Now let us import and inspect the reviews.csv.
+
+The same steps are now applied to the reviews dataset. Now let us import and inspect the reviews.csv.
 
 ```{r importing_reviews}
 d.reviews <- read_csv("Data/reviews.csv")
 glimpse(d.reviews)
 ```
 
-The same missing-data diagnostics are then applied to the reviews dataset by again calculating the number and proportion of missing values in each column. Missing values in the comments column are replaced with the string "Unknown" so that all review records contain a valid text entry and can be processed consistently. Afterwards, all non-English comments are deleted. It is explained in the next section why this was done.
+The same steps are applied to the reviews dataset. 1. Converting ids from dbl to character and check missing values.
 
-Finally, the listings dataset is checked for duplicate listing identifiers. This is done by counting how often each id appears, filtering for those that occur more than once, and displaying only the distinct duplicated entries. This step verifies whether the primary key in the listings data is unique, which is important for reliable joins and further analysis.
-
-```{r}
-# missing data in each column
-colSums(is.na(d.listings))
-# percentage of missing data
-colMeans(is.na(d.listings))
-
-# drop column license as it contains only NA values
-d.listings <- d.listings %>% 
-  select(-license)
-
-# replace NA's in other columns so that we have valid values for analysis (except for last_review because here it does not make sense to enter a somewhat valid date for NA values)
-d.listings <- d.listings %>% 
-  replace_na(list(price = 0, reviews_per_month = 0))
-
-# same checks for reviews and replace NA's
-colSums(is.na(d.reviews))
-colMeans(is.na(d.reviews))
-
-d.reviews <- d.reviews %>% 
-  replace_na(list(comments = 'Unknown'))
-
-# filter out non-English comments
-d.reviews_eng <- d.reviews %>%
+```{r reviews_transformations}
+# Convert ids to characters
+d.reviews <- d.reviews %>%
   mutate(
-    detected_language = detect_language(comments)
-  ) %>%
-  filter(
-    detected_language == "en" | is.na(detected_language)
-  ) %>%
+    id = as.character(id),
+    listing_id = as.character(listing_id),
+    reviewer_id = as.character(listing_id),
+  )
+
+# missing data in each column
+d.reviews %>%
+  summarise(across(everything(), ~ sum(is.na(.x)))) %>%
+  pivot_longer(everything(),
+               names_to = "variable",
+               values_to = "n_missing") %>%
+  filter(n_missing > 0) %>%          # keeps only variables with missing values
+  arrange(desc(n_missing))
+
+```
+
+The missing values in the comments column are replaced with the string "Unknown" so that all review records contain a valid text entry and can be processed consistently. Afterwards, all non-English comments are deleted. It is explained in the next section why this was done.
+
+```{r reviews_missing}
+d.reviews <- d.reviews %>% 
+  replace_na(list(comments = "Unknown"))
+
+# Filter out non-English comments
+d.reviews_eng <- d.reviews %>%
+  mutate(detected_language = detect_language(comments)) %>%
+  filter(detected_language == "en" | is.na(detected_language)) %>%
   select(-detected_language)
 
-# Check for duplicate Id's in listings
-d.listings %>%
-  add_count(id) %>%
-  filter(n>1) %>%
-  distinct()
+# Counts
+n_total      <- nrow(d.reviews)
+n_after      <- nrow(d.reviews_eng)
+n_deleted    <- n_total - n_after
+n_duplicates <- sum(duplicated(d.reviews$id))
+
+# Summary table
+tibble(
+  n_total_reviews        = n_total,
+  n_duplicate_review_ids = n_duplicates,
+  n_deleted_non_english  = n_deleted,
+  pct_deleted            = round(100 * n_deleted / n_total, 2)
+)
+
 
 ```
 
@@ -510,14 +521,6 @@ ggplot(boxplot_data, aes(x = "", y = value)) +
   )
 
 ```
-
-## Further Data Cleaning
-
-```{r}
-
-```
-
-## Outlier detection
 
 ## Correlation Analysis
 
