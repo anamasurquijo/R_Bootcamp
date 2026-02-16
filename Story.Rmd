@@ -1049,7 +1049,7 @@ library(dplyr)
 neighbourhoods <- st_read("Data/neighbourhoods.geojson")
 
 # get hotels from OpenStreetMap
-osm_hotels <- opq("Zurich, Switzerland") %>%
+osm_hotels <- opq("Zurich, Switzerland", timeout = 180) %>%
   add_osm_feature(key = "tourism", value = "hotel") %>%
   osmdata_sf()
 
@@ -1215,8 +1215,8 @@ cat(
 ```{r linear_model,class.source = "fold-show"}
 
 # Check if model already exists
-if (file.exists("../models/lm_model.rds")) {
-  lm_model <- readRDS("../models/lm_model.rds")
+if (file.exists("lm_model.rds")) {
+  lm_model <- readRDS("lm_model.rds")
 } else {
   
 # log
@@ -1233,14 +1233,14 @@ lm_model <- lm(log_price ~ room_type +
                            availability_365,
              data = d.model)
   # Save model
-  saveRDS(lm_model, "../models/lm_model.rds")
+  saveRDS(lm_model, "lm_model.rds")
 }
 
 # Key coefficients
 summary(lm_model)
 
 # exp to be easier to interpret
-round((exp(coef(model2)) - 1) * 100, 1)
+round((exp(coef(lm_model)) - 1) * 100, 1)
 ```
 
 # Conclusions
