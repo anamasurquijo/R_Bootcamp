@@ -17,7 +17,7 @@ output:
 ```{r knitr-setup, include = FALSE}
 library(knitr)
 opts_chunk$set(
-  echo = TRUE,       # display R code, but above we hide it
+  echo = TRUE,       # display R code, but above we collapse it
   include = TRUE,     # display R result
   message = FALSE,
   warning = FALSE,
@@ -97,13 +97,111 @@ library(R.utils)
 gunzip("Data/reviews.csv.gz")
 ```
 
-First, the listings and reviews datasets are imported from CSV files using read_csv and stored as d.listings and d.reviews. Let us get a first import the csvs and get an overview of how the datasets look like to get a first impression. For this we start importing and using the glimpse function of the dplyr package as the head and str functions of base R do not make it that clean.
+First, the listings and reviews datasets are imported from CSV files using read_csv and stored as d.listings and d.reviews. Let us import the csvs and get an overview of how the datasets look like to get a first impression. For this we start importing and using the glimpse function of the dplyr package as the head and str functions of base R do not make it that clean.
 
 ```{r importing_listings}
 d.listings <- read_csv("Data/listings.csv")
 glimpse(d.listings)
 ```
+**Data Type Transformations**
+The first impression tells us, that the license columnn might completely be empty.
+Furthermore, we see that we have:
+- <dbl>: Double types, which are numeric values with decimals for continuous numbers.
+- <chr>: Character type, which are text values (strings).
+- <date>: Date type, which is stored in a specific date format.
+- <lgl>:Logical type, storing TRUE or FALSE values
 
+We convert the variables room_type, neighbourhood, and neighbourhood_group to factors because they represent categorical rather than numerical information. This ensures they are treated as discrete groups in the analysis and allows the model to estimate category-specific effects appropriately.
+
+The variables id and host_id are converted to character because they serve as unique identifiers and do not carry numerical meaning.
+
+**Missing Data**
+After converting the required types, the amount of missing data is examined by
+- calculating the absolute number of missing values in each column
+- visualizing the proportion of missing values relative to the total number of observations
+- missing data visualitazion to understand if missing data is systematic
+
+This provides an overview of data completeness and helps identify variables that may require cleaning or removal.
+
+Based on this inspection, the column license is removed from the listings dataset, as we assumed at the beginning it contains only missing values and therefore provides no usable information for the analysis.
+
+The remaining missing values in selected numeric variables are then addressed by replacing NA values with zeros for price and reviews_per_month, ensuring that these variables contain valid numeric values and can be used in subsequent analyses. It is important to mention, that in the part to analyse the price, we will need to filter by price > 0 in order the analysis makes completely sense.
+The last_review variable is intentionally left unchanged, as imputing a date where none exists would not be meaningful.
+
+```{r listings_transformations}
+
+# Convert ids to characters and neighbourhoods and roomtype to factors
+d.listings <- d.listings %>%
+  mutate(
+    id = as.character(id),
+    host_id = as.character(host_id),
+    neighbourhood_group = factor(neighbourhood_group),
+    room_type = factor(room_type),
+    neighbourhood = factor(neighbourhood)
+  )
+
+# missing data in each column
+d.listings %>%
+  summarise(across(everything(), ~ sum(is.na(.x)))) %>%
+  pivot_longer(everything(),
+               names_to = "variable",
+               values_to = "n_missing") %>%
+  filter(n_missing > 0) %>%          # keeps only variables with missing values
+  arrange(desc(n_missing))
+```
+
+```{r missing_percentage}
+d.listings %>%
+  summarise(across(everything(), ~ mean(is.na(.x)))) %>%
+  pivot_longer(everything(),
+               names_to = "variable",
+               values_to = "pct_missing") %>%
+  mutate(pct_missing = pct_missing * 100) %>%
+  filter(pct_missing > 0) %>%
+  ggplot(aes(x = pct_missing,
+             y = reorder(variable, pct_missing))) +
+  geom_segment(aes(x = 0, xend = pct_missing,
+                   yend = variable)) +
+  geom_point(size = 3) +
+  labs(title = "Percentage of Missing Values",
+       x = "Missing (%)",
+       y = NULL)
+```
+
+
+```{r missing_pattern}
+d.listings %>%
+  mutate(row_id = row_number()) %>%
+  pivot_longer(
+    -row_id,
+    names_to = "variable",
+    values_to = "value",
+    values_transform = list(value = as.character)   # 🔥 fix here
+  ) %>%
+  mutate(is_missing = is.na(value)) %>%
+  ggplot(aes(x = variable, y = row_id, fill = is_missing)) +
+  geom_raster() +
+  scale_fill_manual(values = c("FALSE" = "white",
+                               "TRUE"  = "red")) +
+  labs(title = "Missing Data Pattern",
+       x = NULL,
+       y = NULL,
+       fill = "Missing") +
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+
+
+
+```{r importing_reviews}
+# drop column license as it contains only NA values
+d.listings <- d.listings %>% 
+  select(-license)
+
+# replace NA's in other columns so that we have valid values for analysis (except for last_review because here it does not make sense to enter a somewhat valid date for NA values)
+d.listings <- d.listings %>% 
+  replace_na(list(price = 0, reviews_per_month = 0))
+```
 Now let us import and inspect the reviews.csv.
 
 ```{r importing_reviews}
@@ -111,20 +209,11 @@ d.reviews <- read_csv("Data/reviews.csv")
 glimpse(d.reviews)
 ```
 
-After loading the listings data, the amount of missing data is examined by calculating both the absolute number of missing values in each column and the proportion of missing values relative to the total number of observations. This provides an overview of data completeness and helps identify variables that may require cleaning or removal.
-
-Based on this inspection, the column license is removed from the listings dataset because it contains only missing values and therefore provides no usable information for the analysis. The remaining missing values in selected numeric variables are then addressed by replacing NA values with zeros for price and reviews_per_month, ensuring that these variables contain valid numeric values and can be used in subsequent analyses. The last_review variable is intentionally left unchanged, as imputing a date where none exists would not be meaningful.
-
 The same missing-data diagnostics are then applied to the reviews dataset by again calculating the number and proportion of missing values in each column. Missing values in the comments column are replaced with the string "Unknown" so that all review records contain a valid text entry and can be processed consistently. Afterwards, all non-English comments are deleted. It is explained in the next section why this was done.
 
 Finally, the listings dataset is checked for duplicate listing identifiers. This is done by counting how often each id appears, filtering for those that occur more than once, and displaying only the distinct duplicated entries. This step verifies whether the primary key in the listings data is unique, which is important for reliable joins and further analysis.
 
 ```{r}
-library(readr)
-library(dplyr)
-library(tidyr)
-library(cld3)
-
 # missing data in each column
 colSums(is.na(d.listings))
 # percentage of missing data
@@ -285,7 +374,6 @@ glimpse(d.listings_with_sentiment)
 ```
 
 With the merged data in the dataset 'r d.merged' as solid basis is provided for the analysis. The next chapter dives into the data's characteristics, patterns and trends.
-
 
 ## Summary Statistics of data
 
@@ -899,6 +987,7 @@ ggplot(listings_per_host, aes(x = listings_group)) +
   xlab("Listings per host") +
   ylab("Number of hosts")
 ```
+
 ## Hotels per neighbourhood
 
 ```{r hotels_per_neighbourhood}
@@ -1002,7 +1091,8 @@ n_distinct(d.merged$id)
 d.merged %>%
   filter(format(review_date, "%Y") == "2025") %>%
   summarise(n = n_distinct(id))
-```  
+```
+
 ```{r}
 library(sf)
 library(dplyr)
@@ -1048,7 +1138,6 @@ comparison
 
 ```
 
-
 ## Evolution of number of Airbnb listings
 
 ```{r}
@@ -1072,7 +1161,8 @@ ggplot(listings_per_year, aes(x = year, y = n_listings)) +
 ```
 
 ## Evolution of reviews
-```{r}
+
+```{r evolution of reviews}
 reviews_year <- d.merged %>%
   filter(!is.na(review_date)) %>%
   mutate(year = year(review_date)) %>%
@@ -1101,6 +1191,7 @@ ggplot(reviews_year,
 To evaluate model performance objectively, we split the data into training (80%) and testing (20%) sets. The training set is used to fit models, while the testing set provides an unbiased assessment of how well models generalize to new data. This prevents overfitting, ensures fair comparison across models, and better reflects real operational conditions. The split is stratified so both sets preserve the same balance of high and low demand.
 
 From a business perspective, this matters because a model that performs well in training but poorly on unseen data would be unreliable for planning bike availability, rebalancing, or staffing. The test set helps ensure we deploy models that work in practice, not just on paper.
+
 ```{r train-test-split, cache=TRUE, dependson="data-prep",eval=FALSE}
 # Create stratified split for high_demand to ensure balanced classes
 train_idx <- createDataPartition(bike$high_demand, p = 0.8, list = FALSE)
@@ -1118,15 +1209,19 @@ cat(
 
 ## Model
 
-```{r,class.source = "fold-show"}
+```{r linear_model,class.source = "fold-show"}
 
-d.model <- d.listings_with_sentiment %>%
-  filter(price > 0)
-
-d.model <- d.model %>%
-  mutate(log_price = log(price))
-
-model2 <- lm(log_price ~ room_type +
+# Check if model already exists
+if (file.exists("../models/lm_model.rds")) {
+  lm_model <- readRDS("../models/lm_model.rds")
+} else {
+  
+# log
+  d.model <- d.listings_with_sentiment %>%
+    mutate(log_price = log(price))
+  
+# Fit linear model
+lm_model <- lm(log_price ~ room_type +
                            neighbourhood +
                            mean_bing_score +
                            n_reviews +
@@ -1134,14 +1229,21 @@ model2 <- lm(log_price ~ room_type +
                            minimum_nights +
                            availability_365,
              data = d.model)
+  # Save model
+  saveRDS(lm_model, "../models/lm_model.rds")
+}
 
-summary(model2)
+# Key coefficients
+summary(lm_model)
+
+# exp to be easier to interpret
 round((exp(coef(model2)) - 1) * 100, 1)
 ```
 
 # Conclusions
 
 # Potential Limitations
+
 Static pricing information: The dataset contains only one price per listing, although Airbnb prices are dynamic and may vary over time depending on demand, seasonality, and availability. Therefore, the observed price may not fully reflect actual pricing strategies throughout the year.
 
 Limited property characteristics: The dataset does not provide detailed information on property size, number of rooms, number of beds, capacity (number of guests), or number of bathrooms. These factors are likely important determinants of price and may lead to omitted variable bias in the regression analysis.
@@ -1154,8 +1256,8 @@ Exclusion of non-English reviews: Non-English comments were removed prior to sen
 
 **Tools used**
 
-- ChatGPT
-- Gemini
+-   ChatGPT
+-   Gemini
 
 **What have you used it for?**
 
@@ -1169,9 +1271,9 @@ Another important use was improving the structure and clarity of our written ana
 
 **For what kind of tasks turned they out to be helpful?**
 
-- Correcting language, grammar, and writing style
-- Structuring and refining our analysis in a clearer and more professional way
-- Supporting more advanced R functions or improving visual aspects of graphs (e.g., formatting or color adjustments)
+-   Correcting language, grammar, and writing style
+-   Structuring and refining our analysis in a clearer and more professional way
+-   Supporting more advanced R functions or improving visual aspects of graphs (e.g., formatting or color adjustments)
 
 **How do you check correctness of the answer?**
 
