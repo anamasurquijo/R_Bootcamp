@@ -368,6 +368,10 @@ d.merged <- d.merged %>%
   )
 glimpse(d.merged)
 
+```
+While we have now the bing_score per comment, it will be interesting to have also a final dataset that shows the mean bing_score per airbnb and the number of reviews, in order to kind of create a mean rating of each of the airbnbs and also see if this is trustworthy depending on the number of reviews (if just one review, it is not that representative).
+
+```{r mean_reviews_airbnb}
 listing_sentiment <- d.merged %>%
   group_by(id) %>%
   summarise(
@@ -380,9 +384,9 @@ d.listings_with_sentiment <- d.listings %>%
   left_join(listing_sentiment, by = "id")
 
 glimpse(d.listings_with_sentiment)
-
-
 ```
+
+
 **Limitations**
 The sentiment analysis is based on a simple binary lexicon and ignores context, word order, and negations. Therefore, phrases like “not bad” or “not dirty” may be incorrectly classified as negative. Sarcasm and nuanced language are also not captured.
 
