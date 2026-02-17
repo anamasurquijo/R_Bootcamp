@@ -41,6 +41,7 @@ library(patchwork)
 library(lubridate)
 library(tidytext)
 library(textdata)
+library(corrplot)
 ```
 
 # Introduction
@@ -265,7 +266,6 @@ tibble(
 
 ```
 
-
 After cleaning the 2 datasets separately, we can continue to merged them.
 
 First, a join condition is explicitly defined to link the two datasets by matching the id column in the listings data with the listing_id column in the reviews data. Using this condition, the cleaned listings dataset is merged with the reviews dataset using a left join, ensuring that all listings are retained in the merged dataset while review information is added where a matching review exists.
@@ -369,6 +369,7 @@ d.merged <- d.merged %>%
 glimpse(d.merged)
 
 ```
+
 While we have now the bing_score per comment, it will be interesting to have also a final dataset that shows the mean bing_score per airbnb and the number of reviews, in order to kind of create a mean rating of each of the airbnbs and also see if this is trustworthy depending on the number of reviews (if just one review, it is not that representative).
 
 ```{r mean_reviews_airbnb}
@@ -376,7 +377,7 @@ listing_sentiment <- d.merged %>%
   group_by(id) %>%
   summarise(
     mean_bing_score = mean(bing_score[!is.na(review_id)], na.rm = TRUE),
-    n_reviews = sum(!is.na(review_id)),
+    n_english_reviews = sum(!is.na(review_id)),
     .groups = "drop"
   )
 
@@ -386,9 +387,7 @@ d.listings_with_sentiment <- d.listings %>%
 glimpse(d.listings_with_sentiment)
 ```
 
-
-**Limitations**
-The sentiment analysis is based on a simple binary lexicon and ignores context, word order, and negations. Therefore, phrases like “not bad” or “not dirty” may be incorrectly classified as negative. Sarcasm and nuanced language are also not captured.
+**Limitations** The sentiment analysis is based on a simple binary lexicon and ignores context, word order, and negations. Therefore, phrases like “not bad” or “not dirty” may be incorrectly classified as negative. Sarcasm and nuanced language are also not captured.
 
 In addition, only English comments were analyzed, which reduces the sample size and may introduce selection bias. The final score (−1, 0, 1) is a simplified measure and does not fully reflect the complexity of review tone.
 
@@ -396,21 +395,17 @@ With the merged data in the dataset 'r d.merged' as solid basis is provided for 
 
 ## Summary Statistics of data
 
-```{r}
+To gain an initial understanding of the dataset, descriptive summary statistics are computed for all relevant numeric variables. These statistics provide an overview of central tendency (mean, median), dispersion (standard deviation), and distribution (minimum, quartiles, maximum), allowing us to better understand the structure and variability of the data before proceeding to more advanced analyses.
+
+```{r summary_statistics}
 
 # These variables are numeric but are identifiers, coordinates,
 # or sentiment counters that are not meaningful for descriptive stats
 vars_exclude <- c(
-  "bing_score",
-  "host_id",
-  "id",
   "latitude",
   "longitude",
   "n_negative",
-  "n_positive",
-  "review_id",
-  "reviewer_id"
-)
+  "n_positive")
 
 
 # Create a summary table for the remaining numeric variables
@@ -447,51 +442,44 @@ num_summary <- d.merged %>%
         max    = ~max(., na.rm = TRUE)
       ),
 
-      # IMPORTANT: Naming convention for the generated columns
-      # This creates column names like: price__mean, price__sd, price__q25, ...
-      #
-      # Why this is needed:
-      # - summarise(across()) produces MANY columns
-      # - we need a predictable separator to later split
-      #   the column name into:
-      #     - variable name  and
-      #     - statistic name
-      #
-      # We use "__" (double underscore) instead of "_" because many variable names already contain underscores # (e.g. minimum_nights). 
-      # Using "_" would cause ambiguity.
-      #
-      # { .col } = original variable name
-      # { .fn  } = name of the summary function
+      # Naming convention: variable__statistic
+      # This allows us to later split the column name into:
+      # - variable name
+      # - statistic name
       .names = "{.col}__{.fn}"
     )
   ) %>%
 
-  # Reshape from wide to long format, so we group the many columns from summarise and across a bit
-  # basically, we have three columns here: variable, stat and value
-  # so each statistic is its own row
+  # Reshape from wide to long format
+  # We now have three columns: variable, stat, and value
   pivot_longer(
     everything(),
     names_to  = c("variable", "stat"),
-    names_sep = "__",   # must match the separator used above so doulble underscore.
+    names_sep = "__",   # must match the separator used above
     values_to = "value"
   ) %>%
 
   # Reshape back to a clean summary table
-  # This puts each statistic into its own column again,
-  # but now with one row per variable
+  # Now we have one row per variable
+  # and each statistic is its own column again
   pivot_wider(
     names_from  = stat,
     values_from = value
   ) %>%
 
-  # Order rows alphabetically to guide reader
-  arrange(variable)
+  # Order rows alphabetically to guide the reader
+  arrange(variable) %>%
+
+  # Round numeric results to 2 decimals (except n)
+  mutate(
+    across(-c(variable, n), ~round(.,2))
+  )
 
 num_summary
 
 ```
 
-```{r}
+```{r boxplot_statistics}
 
 boxplot_data <- d.merged %>%
   distinct(id, .keep_all = TRUE) %>%
@@ -529,8 +517,132 @@ ggplot(boxplot_data, aes(x = "", y = value)) +
   )
 
 ```
+The summary statistics reveal substantial heterogeneity across listings. Prices are right-skewed, with a mean (168.63) above the median (136), indicating the presence of high-priced listings. A similar right-skewed pattern appears for review counts and host listing counts, suggesting that while most listings and hosts operate at moderate levels, a small number are highly active. In particular, the high values of calculated_host_listings_count indicate that some hosts manage many properties, which likely reflects professional operators or companies rather than individual hosts.
+
+Minimum nights is generally low (median = 2), but extreme values exist, reflecting some listings with strict booking requirements. Availability varies considerably across listings, indicating differences in how intensively properties are offered.
+
+The sentiment score is strongly concentrated at positive values (median = 1), confirming that most reviews are favorable.
+
+Although several variables exhibit extreme values, these appear economically plausible and are therefore retained in the analysis.
+
+```{r exploratory_data_analysis}
+# ---------------------------------------------
+# Distribution of Log-Transformed Listing Prices
+# Shows the distribution of prices after log transformation
+# to reduce right-skewness and extreme outliers
+# ---------------------------------------------
+ggplot(d.merged, aes(x = log(price))) +
+  geom_histogram(bins = 40, fill = "steelblue", alpha = 0.7) +
+  theme_minimal() +
+  labs(
+    title = "Distribution of Log-Transformed Listing Prices",
+    x = "Log(Price)",
+    y = "Count"
+  )
+
+
+# ---------------------------------------------
+# Price Distribution by Room Type
+# Compares pricing differences across market segments
+# ---------------------------------------------
+ggplot(d.merged, aes(x = room_type, y = price)) +
+  geom_boxplot(fill = "steelblue", alpha = 0.7) +
+  theme_minimal() +
+  labs(
+    title = "Price Distribution by Room Type",
+    x = "Room Type",
+    y = "Price"
+  )
+
+
+# ---------------------------------------------
+# Price Distribution by Review Sentiment
+# Examines whether listing prices differ depending on review tone
+# ---------------------------------------------
+ggplot(d.merged, aes(x = factor(bing_score), y = price)) +
+  geom_boxplot(fill = "steelblue", alpha = 0.7) +
+  theme_minimal() +
+  labs(
+    title = "Price Distribution by Review Sentiment",
+    x = "Sentiment Score (-1 = Negative, 0 = Neutral, 1 = Positive)",
+    y = "Price"
+  )
+
+
+# ---------------------------------------------
+# Relationship Between Number of Reviews and Price
+# Investigates whether more popular listings differ in pricing
+# ---------------------------------------------
+ggplot(d.merged, aes(x = number_of_reviews, y = price)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_minimal() +
+  labs(
+    title = "Relationship Between Number of Reviews and Price",
+    x = "Number of Reviews",
+    y = "Price"
+  )
+
+
+# ---------------------------------------------
+# Relationship Between Availability and Price
+# Explores whether more available listings charge different prices
+# ---------------------------------------------
+ggplot(d.merged, aes(x = availability_365, y = price)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_minimal() +
+  labs(
+    title = "Relationship Between Availability and Price",
+    x = "Availability (Days per Year)",
+    y = "Price"
+  )
+
+
+
+```
 
 ## Correlation Analysis
+```{r correlation_analysis}
+library(dplyr)
+library(corrplot)
+
+# --- numeric data (exclude coords + intermediate sentiment counts) ---
+airbnb_numeric <- d.merged %>%
+  select(
+    price,
+    availability_365,
+    minimum_nights,
+    calculated_host_listings_count,
+    number_of_reviews,
+    number_of_reviews_ltm,
+    reviews_per_month,
+    bing_score
+  )
+
+# --- correlations ---
+cor_predictors <- cor(airbnb_numeric %>% select(-price), use = "complete.obs")
+
+# --- same colors as your example ---
+my_cols <- colorRampPalette(c("#6D9EC1", "white", "#E46726"))(200)
+
+corrplot(
+  cor_predictors,
+  method       = "color",
+  type         = "upper",
+  tl.col       = "black",
+  tl.srt       = 45,
+  tl.cex       = 0.8,
+  addCoef.col  = "black",
+  number.cex   = 0.6,
+  col          = my_cols,
+  cl.lim       = c(-1, 1),              # force same scale & colors
+  title        = "Correlation Matrix of Airbnb Price Predictors",
+  mar          = c(0, 0, 2, 0)
+)
+
+
+```
 
 ## Multicollinearity Assessment among Predictors
 
@@ -1012,7 +1124,7 @@ library(dplyr)
 neighbourhoods <- st_read("Data/neighbourhoods.geojson")
 
 # get hotels from OpenStreetMap
-osm_hotels <- opq("Zurich, Switzerland") %>%
+osm_hotels <- opq("Zurich, Switzerland",timeout = 300) %>%
   add_osm_feature(key = "tourism", value = "hotel") %>%
   osmdata_sf()
 
@@ -1057,7 +1169,7 @@ library(dplyr)
 neighbourhoods <- st_read("Data/neighbourhoods.geojson")
 
 # get hotels from OpenStreetMap
-osm_hotels <- opq("Zurich, Switzerland", timeout = 180) %>%
+osm_hotels <- opq("Zurich, Switzerland", timeout = 300) %>%
   add_osm_feature(key = "tourism", value = "hotel") %>%
   osmdata_sf()
 
