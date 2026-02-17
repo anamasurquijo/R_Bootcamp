@@ -39,6 +39,8 @@ library(leaflet)
 library(sf)
 library(patchwork)
 library(lubridate)
+library(tidytext)
+library(textdata)
 ```
 
 # Introduction
@@ -212,7 +214,7 @@ d.reviews <- read_csv("Data/reviews.csv")
 glimpse(d.reviews)
 ```
 
-The same steps are applied to the reviews dataset. 1. Converting ids from dbl to character and check missing values.
+The same steps are applied to the reviews dataset. First, the ids are converted from double to character and we check for missing values.
 
 ```{r reviews_transformations}
 # Convert ids to characters
@@ -263,7 +265,8 @@ tibble(
 
 ```
 
-In the next cell below, the two data sets were merged.
+
+After cleaning the 2 datasets separately, we can continue to merged them.
 
 First, a join condition is explicitly defined to link the two datasets by matching the id column in the listings data with the listing_id column in the reviews data. Using this condition, the cleaned listings dataset is merged with the reviews dataset using a left join, ensuring that all listings are retained in the merged dataset while review information is added where a matching review exists.
 
@@ -273,7 +276,7 @@ To further investigate unmatched cases, an anti-join is performed between the li
 
 Finally, to improve clarity and avoid ambiguity in the merged dataset, review-related columns are renamed. The review identifier column originating from the reviews table is renamed to review_id, and the review date column is renamed to review_date, making the structure and meaning of the merged data clearer for subsequent analysis.
 
-```{r,class.source = "fold-show"}
+```{r merge_and_rename,class.source = "fold-show"}
 by <- join_by(id == listing_id)
 
 d.merged <- d.listings %>%
@@ -313,14 +316,11 @@ The Bing sentiment lexicon is then loaded. With this lexicon, the tokenized word
 
 Lastly, the sentiment score columns are merged with the original 'd.merged' dataset on the review identifier using a left join. Any reviews that did not contain words found in the bing lexicon are assigned a neutral score of 0. This is done so that the score column contains no empty values. The result is the original dataset being augmented with a sentiment score for each review that reflects its overall tone and can be used for visualizations.
 
-```{r}
+```{r sentiment_analysis}
 
 # this is here just so that the cell can be re-run without duplicating the new columns
 d.merged <- d.merged %>% 
   select(c(id:comments))
-
-library(tidytext)
-library(textdata)
 
 comments_df <- d.merged %>%
   select(review_id, comments)
@@ -383,6 +383,10 @@ glimpse(d.listings_with_sentiment)
 
 
 ```
+**Limitations**
+The sentiment analysis is based on a simple binary lexicon and ignores context, word order, and negations. Therefore, phrases like “not bad” or “not dirty” may be incorrectly classified as negative. Sarcasm and nuanced language are also not captured.
+
+In addition, only English comments were analyzed, which reduces the sample size and may introduce selection bias. The final score (−1, 0, 1) is a simplified measure and does not fully reflect the complexity of review tone.
 
 With the merged data in the dataset 'r d.merged' as solid basis is provided for the analysis. The next chapter dives into the data's characteristics, patterns and trends.
 
