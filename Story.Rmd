@@ -525,82 +525,33 @@ The sentiment score is strongly concentrated at positive values (median = 1), co
 
 Although several variables exhibit extreme values, these appear economically plausible and are therefore retained in the analysis.
 
-```{r exploratory_data_analysis}
-# ---------------------------------------------
-# Distribution of Log-Transformed Listing Prices
-# Shows the distribution of prices after log transformation
-# to reduce right-skewness and extreme outliers
-# ---------------------------------------------
-ggplot(d.merged, aes(x = log(price))) +
-  geom_histogram(bins = 40, fill = "steelblue", alpha = 0.7) +
-  theme_minimal() +
-  labs(
-    title = "Distribution of Log-Transformed Listing Prices",
-    x = "Log(Price)",
-    y = "Count"
-  )
 
-
-# ---------------------------------------------
-# Price Distribution by Room Type
-# Compares pricing differences across market segments
-# ---------------------------------------------
-ggplot(d.merged, aes(x = room_type, y = price)) +
-  geom_boxplot(fill = "steelblue", alpha = 0.7) +
-  theme_minimal() +
-  labs(
-    title = "Price Distribution by Room Type",
-    x = "Room Type",
-    y = "Price"
-  )
-
-
-# ---------------------------------------------
-# Price Distribution by Review Sentiment
-# Examines whether listing prices differ depending on review tone
-# ---------------------------------------------
-ggplot(d.merged, aes(x = factor(bing_score), y = price)) +
-  geom_boxplot(fill = "steelblue", alpha = 0.7) +
-  theme_minimal() +
-  labs(
-    title = "Price Distribution by Review Sentiment",
-    x = "Sentiment Score (-1 = Negative, 0 = Neutral, 1 = Positive)",
-    y = "Price"
-  )
-
-
-# ---------------------------------------------
-# Relationship Between Number of Reviews and Price
-# Investigates whether more popular listings differ in pricing
-# ---------------------------------------------
-ggplot(d.merged, aes(x = number_of_reviews, y = price)) +
+```{r facetting}
+ggplot(d.merged %>% filter(price > 0), 
+       aes(x = number_of_reviews, y = log(price))) +
   geom_point(alpha = 0.2) +
   geom_smooth(method = "lm", se = FALSE) +
   theme_minimal() +
   labs(
-    title = "Relationship Between Number of Reviews and Price",
+    title = "Relationship Between Number of Reviews and Log Price",
     x = "Number of Reviews",
-    y = "Price"
+    y = "Log(Price)"
   )
 
-
-# ---------------------------------------------
-# Relationship Between Availability and Price
-# Explores whether more available listings charge different prices
-# ---------------------------------------------
-ggplot(d.merged, aes(x = availability_365, y = price)) +
+ggplot(d.merged, aes(x = number_of_reviews, y = log(price))) +
   geom_point(alpha = 0.2) +
   geom_smooth(method = "lm", se = FALSE) +
-  theme_minimal() +
-  labs(
-    title = "Relationship Between Availability and Price",
-    x = "Availability (Days per Year)",
-    y = "Price"
-  )
+  facet_wrap(~ room_type) +
+  theme_minimal()
 
-
+ggplot(d.merged, aes(x = number_of_reviews, y = log(price))) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method = "lm", se = FALSE) +
+  facet_wrap(~ factor(bing_score)) +
+  theme_minimal()
 
 ```
+
 
 ## Correlation Analysis
 ```{r correlation_analysis}
