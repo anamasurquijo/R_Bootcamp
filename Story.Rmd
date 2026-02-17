@@ -517,6 +517,7 @@ ggplot(boxplot_data, aes(x = "", y = value)) +
   )
 
 ```
+
 The summary statistics reveal substantial heterogeneity across listings. Prices are right-skewed, with a mean (168.63) above the median (136), indicating the presence of high-priced listings. A similar right-skewed pattern appears for review counts and host listing counts, suggesting that while most listings and hosts operate at moderate levels, a small number are highly active. In particular, the high values of calculated_host_listings_count indicate that some hosts manage many properties, which likely reflects professional operators or companies rather than individual hosts.
 
 Minimum nights is generally low (median = 2), but extreme values exist, reflecting some listings with strict booking requirements. Availability varies considerably across listings, indicating differences in how intensively properties are offered.
@@ -524,7 +525,6 @@ Minimum nights is generally low (median = 2), but extreme values exist, reflecti
 The sentiment score is strongly concentrated at positive values (median = 1), confirming that most reviews are favorable.
 
 Although several variables exhibit extreme values, these appear economically plausible and are therefore retained in the analysis.
-
 
 ```{r facetting}
 ggplot(d.merged %>% filter(price > 0), 
@@ -552,8 +552,8 @@ ggplot(d.merged, aes(x = number_of_reviews, y = log(price))) +
 
 ```
 
+## Correlation Analysis and multicollinearity
 
-## Correlation Analysis
 ```{r correlation_analysis}
 library(dplyr)
 library(corrplot)
@@ -595,7 +595,11 @@ corrplot(
 
 ```
 
-## Multicollinearity Assessment among Predictors
+To assess the relationships among the main numeric predictors, a correlation matrix was computed. Overall, most variables exhibit weak pairwise correlations, suggesting limited concerns regarding multicollinearity. In particular, availability, minimum nights, host listing count, and sentiment score show only small correlations with other predictors.
+
+However, strong positive correlations are observed among the review-related variables. The total number of reviews, the number of reviews in the last twelve months, and reviews per month are highly correlated, indicating that these variables capture a similar underlying dimension of listing popularity. Including all of them simultaneously in a regression model could therefore introduce multicollinearity and inflate standard errors. For this reason, only a subset of these review-related variables is included in the final specification.
+
+Overall, aside from the review-related measures, the correlation matrix suggests that the explanatory variables are largely independent, supporting the robustness of the regression analysis.
 
 # Exploratory Data Anaylsis and Visualization
 
