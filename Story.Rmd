@@ -42,6 +42,7 @@ library(lubridate)
 library(tidytext)
 library(textdata)
 library(corrplot)
+library(osmdata)
 ```
 
 # Introduction
@@ -607,10 +608,9 @@ To answer the research questions, the data must be analysed. In this chapter, di
 
 ## Number of listings per room type
 
-First we visualize the number of listings according to the room types. For that it a horizontal barchart displaying the ranking was created. From this visual it is evident that the most listings are rented as entire homes/apartments, followed by private rooms. Hotel and shared rooms make a negligible part of the distribution. Private rooms where guests live in the home of the host are making about one quarter of all listings and the majority of listings take up about three quarters. This means that most listings use entire apartment which take up a lot of living space in comparison to private rooms which are used by the people living in them regardless if the private room is rented or not.
+First we visualize the number of listings according to the room types. For that it a horizontal barchart displaying the ranking was created.
 
-```{r}
-library(ggplot2)
+```{r listings_room_type}
 
 # Listing-level counts per room type
 room_counts <- d.merged %>% 
@@ -664,25 +664,14 @@ ggplot(
   )
   
 ```
+From this visual it is evident that the most listings are rented as entire homes/apartments, followed by private rooms. Hotel and shared rooms make a negligible part of the distribution. Private rooms where guests live in the home of the host are making about one quarter of all listings and the majority of listings take up about three quarters. This means that most listings use entire apartment which take up a lot of living space in comparison to private rooms which are used by the people living in them regardless if the private room is rented or not.
 
 ## Neighbourhood group characteristics
 
-In this section the different neighbourhood group characteristics are analyzed. For that the groups are measured according to their total number of hosts and listings aswell as their mean price and mean number of minimum nights of a stay.
+In this section the different neighborhood group characteristics are analyzed. For that the groups are measured according to their total number of hosts and listings as well as their mean price and mean number of minimum nights of a stay.
 
-As an overall insights: \* The numbers of listings and hosts tend to move together meaning groups with many listings also usually have many hosts. This may indicate active Airbnb markets instead of a few large-scale hosts. \* Mean price varies more stronlgy than mean minimum nights. Generally, the minimum nights stay moderate across the city. \* Each group has a different profile suggesting no uniform market.
 
-While we will not go into details of all neighbourhood groups, we will highlight some of them.
-
-Kreis 1, the Old Town, displays higher prices, a moderate number of listings and hosts and shorter minimum stays. This is propably because of its smaller size and likely driven by tourists and business travelers looking for a premium markert. Kreis 2 shows a similar profile.
-
-Some of the groups more far away from the city center like Kreis 12 display a very low interest from hosts to publish listings. Kreis 5 displays as similar pattern but with relatively high prices. Kreis 12 displays its more peripheral and residential character as its being the least active Airbnb area. Kreis 5 with its direction to Schlieren where a more industrial area lies, displays less space for Airbnb's.
-
-Kreis 3 and 4 with the popular neighbourhood's have profiles with the most hosts and listings indicating the most active market. Which might be also the most affected by possible changes to renting regulations.
-
-```{r}
-
-library(scales)
-library(fmsb)
+```{r neighbourhood_group_characteristics}
 
 listings <- d.merged %>%
   distinct(id, .keep_all = TRUE)
@@ -739,18 +728,21 @@ for (g in radar_scaled$neighbourhood_group) {
 }
 
 ```
+As an overall insights: \* The numbers of listings and hosts tend to move together meaning groups with many listings also usually have many hosts. This may indicate active Airbnb markets instead of a few large-scale hosts. \* Mean price varies more stronlgy than mean minimum nights. Generally, the minimum nights stay moderate across the city. \* Each group has a different profile suggesting no uniform market.
+
+While we will not go into details of all neighbourhood groups, we will highlight some of them.
+
+Kreis 1, the Old Town, displays higher prices, a moderate number of listings and hosts and shorter minimum stays. This is propably because of its smaller size and likely driven by tourists and business travelers looking for a premium markert. Kreis 2 shows a similar profile.
+
+Some of the groups more far away from the city center like Kreis 12 display a very low interest from hosts to publish listings. Kreis 5 displays as similar pattern but with relatively high prices. Kreis 12 displays its more peripheral and residential character as its being the least active Airbnb area. Kreis 5 with its direction to Schlieren where a more industrial area lies, displays less space for Airbnb's.
+
+Kreis 3 and 4 with the popular neighbourhood's have profiles with the most hosts and listings indicating the most active market. Which might be also the most affected by possible changes to renting regulations.
 
 ### Distribution of minimum nights
 
 The histogram shows the distribution of minimum nights requirement for each listing across Zurich. It is based on the listings-level data and restricted to values between 1 and 35 nights.
 
-The distribution is highly right-skewed, the majority of listings only require a minimum stay of 1 or 2 nights. This insight suggests that short-term visists might be the favoured type of stay and may displace long-term housing. However, more information is needed to confirm this insight.
-
-The distribution then decays quickly up to 7 minimum nights. After that there are some notable spikes in the long-tail, for example the minimum stay of 20 nights. But these make only a marginal part of the distribution. Yet, there is a significant spike at 30 minimum nights. These might suggest strategic offerings made by hosts to accomodate to special demands.
-
-Overall, the distribution highlights a dominant short-term rental segment characterised by very low minimal stay requirements along side a small but visible group targeting longer stays.
-
-```{r}
+```{r minimum_nights}
 
 interim <- d.merged %>%
   distinct(id, .keep_all = TRUE)
@@ -774,6 +766,26 @@ ggplot(
   theme_minimal()
 
 ```
+The distribution is highly right-skewed, the majority of listings only require a minimum stay of 1 or 2 nights. This insight suggests that short-term visists might be the favoured type of stay and may displace long-term housing. However, more information is needed to confirm this insight.
+
+The distribution then decays quickly up to 7 minimum nights. After that there are some notable spikes in the long-tail, for example the minimum stay of 20 nights. But these make only a marginal part of the distribution. Yet, there is a significant spike at 30 minimum nights. These might suggest strategic offerings made by hosts to accomodate to special demands.
+
+Overall, the distribution highlights a dominant short-term rental segment characterised by very low minimal stay requirements along side a small but visible group targeting longer stays.
+
+```{r  minimum nights}
+
+min_nights <- d.merged %>%
+  distinct(id, minimum_nights) %>%
+  count(minimum_nights) %>%
+  arrange(minimum_nights) %>%
+  mutate(
+    share = n / sum(n),
+    cum_share = cumsum(share)
+  )
+
+print(n = 53, min_nights)
+
+```
 
 ### Minimum nights per neighbourhood map
 
@@ -783,12 +795,7 @@ Most of the neighbourhoods have a mean between 1 and 19. The closer you get to t
 
 With this visualization it is possible double down on some of the insights and hyptotheses from the previous section. Most of the listings cater for short-term rentals, possible for tourists or business clients.
 
-```{r}
-
-library(leaflet)
-library(scales)
-library(sf)
-library(patchwork)
+```{r minimum_nights_neighbourhood}
 
 geojson <- st_read("Data/neighbourhoods.geojson")
 
@@ -872,11 +879,7 @@ leaflet(geo_min_4326) %>%
 
 The visual below displays once the mean price and once the number of stays each per neighbourhood. The higher the value the lighter the coloring of the neighbourhood.
 
-The prices tend to be higher the closer the neighbourhood group is to the city center. This does not come as a surprise as most people want to minimize their time spent traveling to the city center for their stays. Therefore, listings close to the city center are desired and prices reflect this demand.
-
-However, the number of stays per neighbourhoods reveals, that while the city center is the most popular according to number of stays, other neighbourhoods in close proximity also record a lot of bookings and are quite popular among guests.
-
-```{r}
+```{r price_number_stays_neighbourhood}
 listings <- d.merged %>%
   distinct(id, .keep_all = TRUE)
 
@@ -917,18 +920,16 @@ p_stays <- ggplot(geo_stats) +
 # Combine plots
 p_price + p_stays + plot_annotation(title = "Neighbourhoods in Zürich")
 ```
+The prices tend to be higher the closer the neighbourhood group is to the city center. This does not come as a surprise as most people want to minimize their time spent traveling to the city center for their stays. Therefore, listings close to the city center are desired and prices reflect this demand.
+
+However, the number of stays per neighbourhoods reveals, that while the city center is the most popular according to number of stays, other neighbourhoods in close proximity also record a lot of bookings and are quite popular among guests.
 
 ## Reviews analysis maps
 
 Below the two maps visualize negative reviews. The left map displays the absolute number of negative reviews, while the right map shows the proportion of negative reviews.
 
-According to the left map, on first view one might believe that the city center receives by far the most negative reviews. But the city center is also the place with the most amount of stays and therefore the most reviews. Thus the proportion of negative reviews must be taken into account, which displays a more nuanced picture.
 
-The city center is still one of the neighbourhoods with the highest percentage of negative reviews. Yet, there are much more neighbourhoods with a percentage above 2% and the neighbourhood *Friesenberg* even has a higher percentage than the city center.
-
-Overall, the share of negative reviews is much more informative than the absolute number. Although there is spatial variation in the share of negative reviews, the absolute levels are low, with no neighbourhood exceeding approximately 2.5% negative feedback, suggesting generally high guest satisfaction citywide.
-
-```{r}
+```{r reviews_maps}
 
 neg_stats <- d.merged %>%
   filter(bing_score == -1) %>%
@@ -988,26 +989,15 @@ p_count + p_share + plot_annotation(
 
 ```
 
-```{r}
+According to the left map, on first view one might believe that the city center receives by far the most negative reviews. But the city center is also the place with the most amount of stays and therefore the most reviews. Thus the proportion of negative reviews must be taken into account, which displays a more nuanced picture.
 
-min_nights <- d.merged %>%
-  distinct(id, minimum_nights) %>%
-  count(minimum_nights) %>%
-  arrange(minimum_nights) %>%
-  mutate(
-    share = n / sum(n),
-    cum_share = cumsum(share)
-  )
+The city center is still one of the neighbourhoods with the highest percentage of negative reviews. Yet, there are much more neighbourhoods with a percentage above 2% and the neighbourhood *Friesenberg* even has a higher percentage than the city center.
 
-print(n = 53, min_nights)
-
-```
+Overall, the share of negative reviews is much more informative than the absolute number. Although there is spatial variation in the share of negative reviews, the absolute levels are low, with no neighbourhood exceeding approximately 2.5% negative feedback, suggesting generally high guest satisfaction citywide.
 
 ## Listings per host
 
 ```{r listings_per_host}
-library(dplyr)
-library(ggplot2)
 
 # compute the number of listings per host
 listings_per_host <- d.merged %>%
@@ -1065,60 +1055,11 @@ ggplot(listings_per_host, aes(x = listings_group)) +
   xlab("Listings per host") +
   ylab("Number of hosts")
 ```
+The distribution of listings per host is highly right-skewed. The median host operates a single listing, while the mean of 2.23 listings per host reflects the presence of a smaller group of multi-listing hosts. This indicates that the Airbnb market is primarily composed of individual hosts, although a minority of more professional hosts contributes disproportionately to total supply.
 
 ## Hotels per neighbourhood
 
-```{r hotels_per_neighbourhood}
-
-library(sf)
-library(leaflet)
-library(osmdata)
-library(dplyr)
-
-# load neighbourhood polygons (GeoJSON file)
-neighbourhoods <- st_read("Data/neighbourhoods.geojson")
-
-# get hotels from OpenStreetMap
-osm_hotels <- opq("Zurich, Switzerland",timeout = 300) %>%
-  add_osm_feature(key = "tourism", value = "hotel") %>%
-  osmdata_sf()
-
-# keep hotel polygons and convert each polygon to ONE point
-hotels <- st_point_on_surface(osm_hotels$osm_polygons)
-
-# simple interactive map with neighbourhoods and hotels
-leaflet() %>%
-  addTiles() %>%
-  addPolygons(
-    data = neighbourhoods, # add base map
-    weight = 2,            # thinner borders
-    fill = 1           # no fill
-  ) %>%
-  addCircleMarkers(
-    data = hotels, 
-    radius = 2,
-    fillOpacity = 1,
-    color = "black"
-    ) %>% #small points
-
-  # Airbnb listings (red, very small)
-  addCircleMarkers(
-    data = d.listings,
-    lng = ~longitude,
-    lat = ~latitude,
-    radius = 2,        # very small
-    stroke = FALSE,
-    fillOpacity = 1,
-    color = "red"
-  )
-
-```
-
-```{r}
-library(sf)
-library(leaflet)
-library(osmdata)
-library(dplyr)
+```{r hotels_neighbourhood}
 
 # load neighbourhood polygons (GeoJSON file)
 neighbourhoods <- st_read("Data/neighbourhoods.geojson")
@@ -1164,16 +1105,15 @@ leaflet() %>%
 
 ```
 
-```{r}
-n_distinct(d.merged$id)
-d.merged %>%
-  filter(format(review_date, "%Y") == "2025") %>%
-  summarise(n = n_distinct(id))
-```
+The map illustrates the geographic distribution of Airbnb listings (red points) and hotels (black points) across the city of Zurich. A clear spatial pattern emerges: Airbnb listings are highly concentrated in central districts, particularly in and around the city center. This clustering reflects the strong demand for short-term accommodation in areas with high accessibility, tourism activity, and proximity to major attractions.
 
-```{r}
-library(sf)
-library(dplyr)
+Hotels are also primarily located in central and well-connected areas. However, compared to Airbnb listings, their spatial distribution appears more concentrated and less dense. In several outer neighbourhoods, Airbnb listings are present despite the absence of nearby hotels.
+
+This spatial mismatch suggests that Airbnb may complement the traditional hotel sector in certain areas. In neighbourhoods where hotel infrastructure is limited or absent, Airbnb potentially increases accommodation capacity and improves geographic coverage for visitors. Conversely, in central districts where both Airbnb listings and hotels are densely concentrated, Airbnb may act more as a competitor rather than a complement to hotels.
+
+The dynamic nature of the map allows the City of Zurich to evaluate neighbourhood-level patterns in detail. Policymakers can identify areas where Airbnb listings expand accommodation supply in underserved zones, as well as areas where short-term rentals may contribute to high tourism pressure or housing market strain. This spatial differentiation provides valuable evidence for designing targeted regulatory or urban planning strategies.
+
+```{r airbnbs_per_hotel}
 
 sf::sf_use_s2(FALSE)
 
@@ -1218,11 +1158,7 @@ comparison
 
 ## Evolution of number of Airbnb listings
 
-```{r}
-library(dplyr)
-library(lubridate)
-library(ggplot2)
-
+```{r evolution airbnbs}
 listings_per_year <- d.merged %>%
   filter(!is.na(review_date)) %>%
   mutate(year = year(review_date)) %>%
@@ -1237,10 +1173,11 @@ ggplot(listings_per_year, aes(x = year, y = n_listings)) +
     y = "Number of Listings"
   )
 ```
+The figure shows a strong upward trend in the number of Airbnb listings in Zurich over time. After gradual growth in the early years, listings increased steadily until 2019. Around 2020, growth temporarily slowed, likely due to the COVID-19 pandemic. From 2021 onward, the number of listings rose sharply, reaching approximately 1,500 by 2025. Overall, the trend indicates that Airbnb has become an increasingly important part of Zurich’s accommodation market.
 
 ## Evolution of reviews
 
-```{r evolution of reviews}
+```{r reviews_evolution}
 reviews_year <- d.merged %>%
   filter(!is.na(review_date)) %>%
   mutate(year = year(review_date)) %>%
@@ -1261,31 +1198,13 @@ ggplot(reviews_year,
     y = "Number of Reviews"
   )
 ```
+The figure shows a strong increase in the total number of Airbnb reviews over time, closely mirroring the growth in listings. Reviews rise steadily until 2019, decline sharply around 2020—likely due to the COVID-19 pandemic—and then increase rapidly again from 2021 onward.
+
+The vast majority of reviews are positive (green), while neutral and negative reviews represent only a small share throughout the period. This indicates consistently high customer satisfaction despite the rapid expansion of the platform.
+
+Overall, the trend suggests both growing market activity and persistently positive guest experiences over time.
 
 # Model - Prediction of price
-
-## Train-Test Split Strategy
-
-To evaluate model performance objectively, we split the data into training (80%) and testing (20%) sets. The training set is used to fit models, while the testing set provides an unbiased assessment of how well models generalize to new data. This prevents overfitting, ensures fair comparison across models, and better reflects real operational conditions. The split is stratified so both sets preserve the same balance of high and low demand.
-
-From a business perspective, this matters because a model that performs well in training but poorly on unseen data would be unreliable for planning bike availability, rebalancing, or staffing. The test set helps ensure we deploy models that work in practice, not just on paper.
-
-```{r train-test-split, cache=TRUE, dependson="data-prep",eval=FALSE}
-# Create stratified split for high_demand to ensure balanced classes
-train_idx <- createDataPartition(bike$high_demand, p = 0.8, list = FALSE)
-train <- bike[train_idx, ]
-test <- bike[-train_idx, ]
-
-cat(
-  "Training observations: ", nrow(train), "\n",
-  "Testing observations: ", nrow(test), "\n\n",
-  "Class distribution in training and test sets:\n",
-  paste(capture.output(prop.table(table(train$high_demand))), collapse = "\n"),
-  paste(capture.output(prop.table(table(test$high_demand))), collapse = "\n")
-)
-```
-
-## Model
 
 ```{r linear_model,class.source = "fold-show"}
 
@@ -1296,7 +1215,11 @@ if (file.exists("lm_model.rds")) {
   
 # log
   d.model <- d.listings_with_sentiment %>%
-    mutate(log_price = log(price))
+    mutate(
+      log_price = log(price),
+      room_type = relevel(room_type, ref = "Entire home/apt"),
+      neighbourhood = relevel(neighbourhood, ref = "City")
+    )
   
 # Fit linear model
 lm_model <- lm(log_price ~ room_type +
@@ -1317,8 +1240,70 @@ summary(lm_model)
 # exp to be easier to interpret
 round((exp(coef(lm_model)) - 1) * 100, 1)
 ```
+```{r linear_model_table,class.source = "fold-show"}
+
+effects <- broom::tidy(lm_model) %>%
+  filter(term != "(Intercept)") %>%
+  mutate(
+    pct_effect = 100 * (exp(estimate) - 1),
+    pct_effect = round(pct_effect, 1)
+  ) %>%
+  arrange(desc(abs(pct_effect)))
+
+effects
+
+# Key effects (everything except neighbourhood)
+effects_key <- effects %>%
+  filter(!grepl("^neighbourhood", term))
+
+effects_key
+
+# Top 8 neighbourhood premiums and discounts (vs City)
+top_neigh_plus  <- effects %>%
+  filter(grepl("^neighbourhood", term)) %>%
+  arrange(desc(pct_effect)) %>%
+  slice(1:8)
+
+top_neigh_minus <- effects %>%
+  filter(grepl("^neighbourhood", term)) %>%
+  arrange(pct_effect) %>%
+  slice(1:8)
+
+top_neigh_plus
+top_neigh_minus
+
+```
+We estimate a linear regression model for Airbnb listings in the City of Zurich using log(price) as the dependent variable. The reference categories are set to Entire home/apt for room type and City for neighbourhood. The model is overall statistically significant (F-test p-value < 2e-16), meaning there is strong evidence that at least one coefficient differs from zero. The model explains approximately 28% of the variation in log prices (R² = 0.279; adjusted R² = 0.263), which represents moderate explanatory power and is typical for cross-sectional housing data. This suggests that while important structural determinants are captured, a substantial share of price variation is driven by additional unobserved characteristics such as apartment size, amenities, and micro-location quality.
+
+Room type is one of the strongest determinants of price in Zurich. There is strong evidence that the difference in price between entire apartments and private rooms is not zero (p < 0.001). On average, private rooms are approximately 41% cheaper than entire apartments, holding neighbourhood and other factors constant. Similarly, there is strong evidence that the difference in price between entire apartments and shared rooms is not zero (p < 0.001), with shared rooms being about 74% cheaper. In contrast, although hotel rooms appear to be around 41% more expensive than entire apartments, there is no evidence that this difference differs from zero at conventional significance levels (p = 0.17). For the City of Zurich, this indicates a clear segmentation between full-apartment rentals and lower-cost room options, while hotel rooms are not statistically distinguishable from entire apartments once other characteristics are controlled for.
+
+Neighbourhood effects further highlight the importance of location within Zurich. For several neighbourhoods, there is strong evidence that the price difference relative to City is not zero, indicating meaningful location-based premiums or discounts. In other neighbourhoods, however, there is no evidence that prices differ from City once room type and other listing characteristics are taken into account. This confirms that spatial variation within Zurich remains a central determinant of Airbnb pricing.
+
+Review sentiment also plays a meaningful role. There is strong evidence that the coefficient on the mean Bing score differs from zero (p < 0.01). A one-unit increase in sentiment is associated with approximately a 17% increase in price, suggesting that listings with more positive review tone are able to charge higher prices in Zurich.
+
+For the number of reviews, there is strong evidence that the coefficient differs from zero (p < 0.05), but the magnitude is economically very small. For every additional review, the price decreases by approximately 0.035%, holding other factors constant. This suggests that while the association is statistically detectable, it is negligible in practical terms. A similar pattern is observed for the number of listings managed by a host. There is strong evidence that the coefficient differs from zero (p < 0.05), but each additional listing is associated with only about a 0.07% decrease in price. This may reflect slightly more competitive pricing strategies among professional hosts, though the economic impact is limited.
+
+For minimum nights, there is no evidence that the effect differs from zero (p = 0.98), indicating that required minimum stay does not significantly affect prices in Zurich once other characteristics are controlled for. Availability shows strong evidence of an association with price (p < 0.001), with each additional available day per year linked to approximately a 0.07% increase in price. However, despite being statistically significant, this effect is economically small.
+
+Overall, there is strong evidence that room type, neighbourhood, and review sentiment are important determinants of Airbnb prices in the City of Zurich. Other variables such as review counts, host portfolio size, and availability show statistically significant but economically minor effects, while minimum nights shows no measurable impact. Although the model is statistically robust, the moderate R² indicates that a considerable share of price variation is driven by additional factors not captured in the model.
 
 # Conclusions
+
+This analysis examined the role of Airbnb across Zurich’s neighbourhoods with the objective of supporting the City of Zurich in evaluating whether targeted regulation of short-term rentals may be appropriate.
+
+Regarding RQ1 and RQ2, Airbnb listings are clearly concentrated in central neighbourhoods such as City, Lindenhof, Enge, Langstrasse, and Werd. These areas show both high listing density and higher prices. However, Airbnb is also present in peripheral neighbourhoods where hotel infrastructure is limited. This suggests that Airbnb partly complements the traditional accommodation sector in underserved areas, while in central districts it may compete more directly with hotels and potentially intensify housing pressure.
+
+With respect to RQ3, the distribution of listings per host indicates that the majority of hosts operate only one listing. This suggests that Zurich’s Airbnb market is still largely driven by individual hosts. Nevertheless, a smaller group of multi-listing hosts contributes disproportionately to total supply, indicating the presence of more commercial activity in certain areas.
+
+Concerning RQ4, the vast majority of listings require very short minimum stays (1–2 nights), and availability varies substantially across listings. This indicates a strong short-term rental orientation, especially in central neighbourhoods. Areas with high availability and multiple listings per host may therefore be more exposed to regulatory measures such as annual rental caps.
+
+In terms of RQ5, guest satisfaction appears consistently high. The proportion of negative reviews remains very low across all neighbourhoods (generally below 2.5%), and sentiment analysis confirms that reviews are overwhelmingly positive. There is strong evidence that more positive review sentiment is associated with higher prices, indicating that quality and reputation matter in Zurich’s Airbnb market.
+
+Finally, addressing RQ6, the regression model shows that room type, neighbourhood, and review sentiment are the most important determinants of price. Central neighbourhoods command substantial price premiums relative to the reference area, and entire apartments are significantly more expensive than private or shared rooms. The model explains approximately 28% of the variation in prices, indicating moderate explanatory power. While statistically robust, a considerable share of price variation is driven by unobserved characteristics such as size, amenities, or micro-location.
+
+Overall, the results suggest that Airbnb in Zurich is not a uniform phenomenon. In central neighbourhoods with high listing density and strong price premiums, short-term rentals may exert more pressure on the housing market and could be priority areas for regulatory attention. In contrast, in peripheral neighbourhoods with limited hotel presence, Airbnb may expand accommodation capacity without comparable housing displacement effects.
+
+For the City of Zurich, this implies that broad, city-wide regulation may be less effective than targeted, neighbourhood-specific measures that account for listing concentration, host behaviour, and rental intensity.
 
 # Potential Limitations
 
