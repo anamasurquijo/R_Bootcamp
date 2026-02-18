@@ -1,5 +1,5 @@
 # 🏠 Evaluating the Role of Airbnb in Zurich’s Neighbourhoods
-R Bootcamp Project – 2026
+R Bootcamp Project – HS25
 Azeglio Martinelli & Ana Mas Urquijo
 
 ## 🌍 Project Goal
