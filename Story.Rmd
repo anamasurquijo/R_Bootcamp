@@ -43,6 +43,7 @@ library(tidytext)
 library(textdata)
 library(corrplot)
 library(osmdata)
+library(caret)
 ```
 
 # Introduction
@@ -190,7 +191,9 @@ While we will replace the missing values of reviews per month variables with zer
 
 Finally, the listings dataset is checked for duplicate listing identifiers. This is done by counting how often each id appears, filtering for those that occur more than once, and displaying only the distinct duplicated entries. This step verifies whether the primary key in the listings data is unique, which is important for reliable joins and further analysis.
 
-```{r listings_missing}
+There are no duplicate listing identifiers.
+
+```{r listings_missing, include=FALSE}
 # Remove column 'license' (contains only missing values)
 d.listings <- d.listings %>% 
   select(-license)
@@ -209,16 +212,16 @@ d.listings %>%
 
 ```
 
-The same steps are now applied to the reviews dataset. Now let us import and inspect the reviews.csv.
+Now let us import and inspect the reviews.csv.
 
 ```{r importing_reviews}
 d.reviews <- read_csv("Data/reviews.csv")
 glimpse(d.reviews)
 ```
 
-The same steps are applied to the reviews dataset. First, the ids are converted from double to character and we check for missing values.
+First, the ids are also converted from double to character and we check for missing values.
 
-```{r reviews_transformations}
+```{r reviews_transformations, include=FALSE}
 # Convert ids to characters
 d.reviews <- d.reviews %>%
   mutate(
@@ -238,9 +241,9 @@ d.reviews %>%
 
 ```
 
-The missing values in the comments column are replaced with the string "Unknown" so that all review records contain a valid text entry and can be processed consistently. Afterwards, all non-English comments are deleted. It is explained in the next section why this was done.
+There are only 4 missing values in the comments column, these are replaced with the string "Unknown" so that all review records contain a valid text entry and can be processed consistently. Afterwards, all non-English comments are deleted, which represent 28.2% of the total comments. It is explained in the next section why this was done.
 
-```{r reviews_missing}
+```{r reviews_missing,include=FALSE}
 d.reviews <- d.reviews %>% 
   replace_na(list(comments = "Unknown"))
 
@@ -273,10 +276,6 @@ First, a join condition is explicitly defined to link the two datasets by matchi
 
 After performing the merge, sanity checks are carried out to assess whether the join behaved as expected. The total number of rows in the merged dataset is computed and compared with the number of rows in the listings data. In addition, the number of unmatched rows is calculated by counting how many entries have missing values in the review identifier column, indicating listings for which no corresponding review record was found.
 
-To further investigate unmatched cases, an anti-join is performed between the listings and reviews datasets. This operation returns only those listings that do not have a matching review. The result is inspected manually using the View() function, allowing a detailed examination of all columns. This inspection confirms that the unmatched entries correspond to listings without any reviews, which explains the absence of a matching listing_id in the reviews data, particularly given that the last_review field contains only missing values for these cases.
-
-Finally, to improve clarity and avoid ambiguity in the merged dataset, review-related columns are renamed. The review identifier column originating from the reviews table is renamed to review_id, and the review date column is renamed to review_date, making the structure and meaning of the merged data clearer for subsequent analysis.
-
 ```{r merge_and_rename,class.source = "fold-show"}
 by <- join_by(id == listing_id)
 
@@ -291,12 +290,16 @@ d.merged %>%
     total = n(),
     unmatched = sum(is.na(id.y))
   )
+```
 
+To further investigate unmatched cases, an anti-join is performed between the listings and reviews datasets. This operation returns only those listings that do not have a matching review. The result is inspected manually using the View() function, allowing a detailed examination of all columns. This inspection confirms that the unmatched entries correspond to listings without any reviews, which explains the absence of a matching listing_id in the reviews data, particularly given that the last_review field contains only missing values for these cases.
+
+Finally, to improve clarity and avoid ambiguity in the merged dataset, review-related columns are renamed. The review identifier column originating from the reviews table is renamed to review_id, and the review date column is renamed to review_date, making the structure and meaning of the merged data clearer for subsequent analysis.
+
+```{r merge_and_rename,class.source = "fold-show"}
 # anti_join to inspect any mismatches
 anti_join(d.listings, d.reviews, by = c("id" = "listing_id")) |>
   View()
-
-# Upon closer, manual inspection wiht the View() it is evident that all the non matched columns exist because they do not have a review and therefore no listing_id to match (because column last_review is all NA's).
 
 # rename different review columns
 d.merged <- d.merged %>% 
@@ -316,6 +319,8 @@ With the preprocessing done, the comments are tokenized. Meaning each comment is
 The Bing sentiment lexicon is then loaded. With this lexicon, the tokenized words are catgorized in a binary fashion, either positive or negative. The tokenized words are joined with this lexicon so that only words appearing in the sentiment dictionary are retained and assigned a corresponding sentiment. Next, the sentiment information is aggregated at the comment level. The categorization of each word is safed into one of two columns, either 'n_positive' or 'n_negative', as counts. These counts are then assigned a score of 1 if the comment contains more positive than negative words, -1 for the opposite case and 0 if the numbers are equal, indicating a neutral comment.
 
 Lastly, the sentiment score columns are merged with the original 'd.merged' dataset on the review identifier using a left join. Any reviews that did not contain words found in the bing lexicon are assigned a neutral score of 0. This is done so that the score column contains no empty values. The result is the original dataset being augmented with a sentiment score for each review that reflects its overall tone and can be used for visualizations.
+
+Let us have a look as how our merged dataset is looking now.
 
 ```{r sentiment_analysis}
 
@@ -370,10 +375,9 @@ d.merged <- d.merged %>%
 glimpse(d.merged)
 
 ```
-
 While we have now the bing_score per comment, it will be interesting to have also a final dataset that shows the mean bing_score per airbnb and the number of reviews, in order to kind of create a mean rating of each of the airbnbs and also see if this is trustworthy depending on the number of reviews (if just one review, it is not that representative).
 
-```{r mean_reviews_airbnb}
+```{r meanumber_of_reviews_airbnb}
 listing_sentiment <- d.merged %>%
   group_by(id) %>%
   summarise(
@@ -392,11 +396,12 @@ glimpse(d.listings_with_sentiment)
 
 In addition, only English comments were analyzed, which reduces the sample size and may introduce selection bias. The final score (−1, 0, 1) is a simplified measure and does not fully reflect the complexity of review tone.
 
-With the merged data in the dataset 'r d.merged' as solid basis is provided for the analysis. The next chapter dives into the data's characteristics, patterns and trends.
+This d.merged dataset and also the d.listings_with_sentiment dataset, where the average "rating" per Airbnb is included, provide a solid basis for the analysis. The next chapter dives into the data's characteristics, patterns and trends.
 
 ## Summary Statistics of data
 
-To gain an initial understanding of the dataset, descriptive summary statistics are computed for all relevant numeric variables. These statistics provide an overview of central tendency (mean, median), dispersion (standard deviation), and distribution (minimum, quartiles, maximum), allowing us to better understand the structure and variability of the data before proceeding to more advanced analyses.
+To gain an initial understanding of the dataset, descriptive summary statistics are computed for all relevant numeric variables. These statistics provide an overview of central tendency (mean, median), dispersion (standard deviation), and distribution (minimum, quartiles, maximum), allowing us to better understand the structure and variability of the data before proceeding to more advanced analyses. We are excluding the numeric variables latitude, longitude, n_negative, n_positive as these are not meaningful for the descriptive statitsics.
+
 
 ```{r summary_statistics}
 
@@ -479,6 +484,7 @@ num_summary <- d.merged %>%
 num_summary
 
 ```
+Furthermore, some boxplots are visualized to show the distrubution these variables are following.
 
 ```{r boxplot_statistics}
 
@@ -527,37 +533,10 @@ The sentiment score is strongly concentrated at positive values (median = 1), co
 
 Although several variables exhibit extreme values, these appear economically plausible and are therefore retained in the analysis.
 
-```{r facetting}
-ggplot(d.merged %>% filter(price > 0), 
-       aes(x = number_of_reviews, y = log(price))) +
-  geom_point(alpha = 0.2) +
-  geom_smooth(method = "lm", se = FALSE) +
-  theme_minimal() +
-  labs(
-    title = "Relationship Between Number of Reviews and Log Price",
-    x = "Number of Reviews",
-    y = "Log(Price)"
-  )
-
-ggplot(d.merged, aes(x = number_of_reviews, y = log(price))) +
-  geom_point(alpha = 0.2) +
-  geom_smooth(method = "lm", se = FALSE) +
-  facet_wrap(~ room_type) +
-  theme_minimal()
-
-ggplot(d.merged, aes(x = number_of_reviews, y = log(price))) +
-  geom_point(alpha = 0.2) +
-  geom_smooth(method = "lm", se = FALSE) +
-  facet_wrap(~ factor(bing_score)) +
-  theme_minimal()
-
-```
 
 ## Correlation Analysis and multicollinearity
 
 ```{r correlation_analysis}
-library(dplyr)
-library(corrplot)
 
 # --- numeric data (exclude coords + intermediate sentiment counts) ---
 airbnb_numeric <- d.merged %>%
@@ -598,7 +577,7 @@ corrplot(
 
 To assess the relationships among the main numeric predictors, a correlation matrix was computed. Overall, most variables exhibit weak pairwise correlations, suggesting limited concerns regarding multicollinearity. In particular, availability, minimum nights, host listing count, and sentiment score show only small correlations with other predictors.
 
-However, strong positive correlations are observed among the review-related variables. The total number of reviews, the number of reviews in the last twelve months, and reviews per month are highly correlated, indicating that these variables capture a similar underlying dimension of listing popularity. Including all of them simultaneously in a regression model could therefore introduce multicollinearity and inflate standard errors. For this reason, only a subset of these review-related variables is included in the final specification.
+However, strong positive correlations are observed among the review-related variables. The total number of reviews, the number of reviews in the last twelve months, and reviews per month are highly correlated, indicating that these variables capture a similar underlying dimension of listing popularity. Including all of them simultaneously in a regression model could therefore introduce multicollinearity and inflate standard errors. For this reason, only a the variabel total number of reviews will be included in the linear model done later.
 
 Overall, aside from the review-related measures, the correlation matrix suggests that the explanatory variables are largely independent, supporting the robustness of the regression analysis.
 
@@ -942,14 +921,14 @@ neg_stats <- d.merged %>%
 all_stats <- d.merged %>%
   group_by(neighbourhood) %>%
   summarise(
-    n_reviews = n(),
+    number_of_reviews = n(),
     .groups = "drop"
   )
 
 neg_stats <- neg_stats %>%
   left_join(all_stats, by = "neighbourhood") %>%
   mutate(
-    share_negative = n_negative_reviews / n_reviews
+    share_negative = n_negative_reviews / number_of_reviews
   )
 
 geo_neg <- geojson %>%
@@ -1182,10 +1161,10 @@ reviews_year <- d.merged %>%
   filter(!is.na(review_date)) %>%
   mutate(year = year(review_date)) %>%
   group_by(year, bing_score) %>%
-  summarise(n_reviews = n(), .groups = "drop")
+  summarise(number_of_reviews = n(), .groups = "drop")
 
 ggplot(reviews_year,
-       aes(x = year, y = n_reviews, fill = factor(bing_score))) +
+       aes(x = year, y = number_of_reviews, fill = factor(bing_score))) +
   geom_area() +
   scale_fill_manual(
     values = c("-1" = "red",
@@ -1206,7 +1185,34 @@ Overall, the trend suggests both growing market activity and persistently positi
 
 # Model - Prediction of price
 
-```{r linear_model,class.source = "fold-show"}
+```{r facetting}
+ggplot(d.merged %>% filter(price > 0), 
+       aes(x = number_of_reviews, y = log(price))) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_minimal() +
+  labs(
+    title = "Relationship Between Number of Reviews and Log Price",
+    x = "Number of Reviews",
+    y = "Log(Price)"
+  )
+
+ggplot(d.merged, aes(x = number_of_reviews, y = log(price))) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method = "lm", se = FALSE) +
+  facet_wrap(~ room_type) +
+  theme_minimal()
+
+ggplot(d.merged, aes(x = number_of_reviews, y = log(price))) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method = "lm", se = FALSE) +
+  facet_wrap(~ factor(bing_score)) +
+  theme_minimal()
+
+```
+
+
+```{r linear_model}
 
 # Check if model already exists
 if (file.exists("lm_model.rds")) {
@@ -1225,7 +1231,7 @@ if (file.exists("lm_model.rds")) {
 lm_model <- lm(log_price ~ room_type +
                            neighbourhood +
                            mean_bing_score +
-                           n_reviews +
+                           number_of_reviews +
                            calculated_host_listings_count +
                            minimum_nights +
                            availability_365,
@@ -1240,7 +1246,7 @@ summary(lm_model)
 # exp to be easier to interpret
 round((exp(coef(lm_model)) - 1) * 100, 1)
 ```
-```{r linear_model_table,class.source = "fold-show"}
+```{r linear_model_table}
 
 effects <- broom::tidy(lm_model) %>%
   filter(term != "(Intercept)") %>%
@@ -1286,6 +1292,94 @@ For the number of reviews, there is strong evidence that the coefficient differs
 For minimum nights, there is no evidence that the effect differs from zero (p = 0.98), indicating that required minimum stay does not significantly affect prices in Zurich once other characteristics are controlled for. Availability shows strong evidence of an association with price (p < 0.001), with each additional available day per year linked to approximately a 0.07% increase in price. However, despite being statistically significant, this effect is economically small.
 
 Overall, there is strong evidence that room type, neighbourhood, and review sentiment are important determinants of Airbnb prices in the City of Zurich. Other variables such as review counts, host portfolio size, and availability show statistically significant but economically minor effects, while minimum nights shows no measurable impact. Although the model is statistically robust, the moderate R² indicates that a considerable share of price variation is driven by additional factors not captured in the model.
+
+## Cross Validation
+```{r cross_validation}
+
+library(dplyr)
+library(caret)
+
+set.seed(123)
+
+# ------------------------------------------------------------
+# 1) Prepare modeling data
+# ------------------------------------------------------------
+d.model <- d.listings_with_sentiment %>%
+  filter(price > 0) %>%
+  mutate(
+    log_price = log(price),
+    room_type = factor(room_type),
+    neighbourhood = factor(neighbourhood)
+  )
+
+# ------------------------------------------------------------
+# 2) Cross-validation setup (5-fold CV)
+# ------------------------------------------------------------
+cv_control <- trainControl(
+  method = "cv",
+  number = 5
+)
+
+# ------------------------------------------------------------
+# 3) Model 1: Original Linear Model
+# ------------------------------------------------------------
+cv_lm <- train(
+  log_price ~ room_type + neighbourhood +
+    mean_bing_score + number_of_reviews +
+    calculated_host_listings_count +
+    minimum_nights + availability_365,
+  data = d.model,
+  method = "lm",
+  trControl = cv_control,
+  metric = "RMSE",
+  na.action = na.omit
+)
+
+# ------------------------------------------------------------
+# 4) Model 2: Polynomial Linear Model (adds nonlinear terms)
+# ------------------------------------------------------------
+cv_poly <- train(
+  log_price ~ room_type + neighbourhood +
+    mean_bing_score + I(mean_bing_score^2) +
+    number_of_reviews + I(number_of_reviews^2) +
+    calculated_host_listings_count +
+    minimum_nights + I(minimum_nights^2) +
+    availability_365 + I(availability_365^2),
+  data = d.model,
+  method = "lm",
+  trControl = cv_control,
+  metric = "RMSE",
+  na.action = na.omit
+)
+
+# ------------------------------------------------------------
+# 5) Compare numerical results
+# ------------------------------------------------------------
+cv_lm$results
+cv_poly$results
+
+# ------------------------------------------------------------
+# 6) Visual comparison across folds
+# ------------------------------------------------------------
+res <- resamples(list(LM = cv_lm, Polynomial = cv_poly))
+
+summary(res)
+
+bwplot(res, metric = "RMSE")     # lower = better
+bwplot(res, metric = "Rsquared") # higher = better
+
+
+```
+
+We compare the original linear model (LM) with a polynomial version using 5-fold cross-validation.
+
+In the first plot (RMSE), lower values indicate better predictive performance. The linear model has a slightly lower average RMSE than the polynomial model. This means that, on unseen data, the linear model makes slightly smaller prediction errors than the polynomial model.
+
+In the second plot (R²), higher values indicate better explanatory power. The linear model also has a slightly higher average R² than the polynomial model. This suggests that the linear model explains a bit more of the variation in log prices compared to the polynomial model.
+
+The boxplots show the distribution of the performance across the folds. The results for both models are relatively similar, but the polynomial model shows slightly more variability and does not improve performance.
+
+Overall, there is no evidence that adding polynomial (nonlinear) terms improves predictive accuracy. In fact, the simpler linear model performs slightly better and is more stable across folds. Therefore, the linear model is preferred, as it achieves similar or better predictive performance while remaining easier to interpret.
 
 # Conclusions
 
@@ -1348,110 +1442,12 @@ By critically reviewing both the logic and the results, we ensured that we fully
 
 Since we used GenAI selectively and always provided clear context and our own preliminary work, the tools generally worked well. We did not encounter major issues. However, we consistently evaluated the responses critically to ensure correctness and maintain academic integrity.
 
-# Requirements (will be deleted)
-
-We cross them as soon as fulfilled:
-
-Two or more data sets which need to be joined/merged
-
-**First data set:**
-
-At least few hundred of observations
-
-At least dozen variables
-
-Numeric and categorical variables
-
-Dates ( YYYY-MM-DD) or geographic locations, both are even better
-
-**Second data set:**
-
-Can be simple
-
-Join the two data sets and highlight in your report where you have done this, showing the line of code where the joining is performed
-
-Ideally different formats and different sources
-
-**Content** Comprehensive analysis which we will present to a hypothetical client
-
-In depth examination of problem being adressed
-
-PDF or HTML with Rmarkdwon or quarto
-
-Clear and comprehensible to all readers
-
-**Prepare the data for the analysis** Cleaned before they are merged and analysis begins
-
-You can hide code but highlight in the text where the data is merged
-
-Please explain in words (not as code) what you have done for data preparation
-
-**Visualize the data appropiately** Analyse data using summary statistics
-
-Graphs
-
-*Recommendations for plots* No pie charts
-
-Alpha level to add transparency to points /lines
-
-Not to many stacked bar plots, or not at all (instead maybe line plots)
-
-Show entire range of values, without zooming too much
-
-Same scale on axes
-
-Shall all observations and infos, not just mean and standard deviation
-
-Not too many dimensions in a graph
-
-**Fit the model** Fit a model and show result + interpet it
-
-Produce graphs (e.g. predictions or residual diagnostics) for your model fits
-
-Possibility: compare several models via CV
-
-**Chapter of choice** Use new package that was not mentioned in the main part of the course (cant be data manipulation, visualisation using ggplot2, regular expressions and reporting using Rmarkdown does not count and perform a task that we have not discussed in the course
-
-No new statistical or machine learning method
-
-Method to prepare or display data
-
-**Generative AI** Quarter to half a page about which tools you have used
-
-What have you used it for? For what kind of tasks turned they out to be helpful?
-
-How do you check correctness of the answer?
-
-What did not work?
-
-**Sell the story** Complete, easy to read, thread (what are you doing, why, conclusions, interpretations, overview . . . )
-
-• Source of the data. • Objectives and hypotheses of the analysis. • Interpretation of each step. • Conclusions drawn from the analysis. • Potential limitations of the study.
-
-**Comments** Comment a lot
-
-Check coding style
-
-**Additional requirements** a readme.txt file;
-
-structured folders (e.g. “Data”, “Scripts”, . . . )
-
-the data set analysed
-
-the Rmarkdown file (.Rmd) (or quarto file)
-
-the PDF or HTML output file
-
-not more than 25 pages
 
 # Appendix
 
 ## Interactive map with all listings
 
 ```{r}
-
-library(dplyr)
-library(leaflet)
 
 airbnb_listings <- d.merged %>%
   distinct(id, .keep_all = TRUE)
