@@ -504,7 +504,7 @@ boxplot_data <- d.merged %>%
     values_to = "value"
   )
 
-# Create faceted boxplots to show the distribution
+# Create faceted boxplots to show the distribution,
 # of each numeric variable separately
 ggplot(boxplot_data, aes(x = "", y = value)) +
   geom_boxplot(
@@ -543,7 +543,8 @@ Although several variables exhibit extreme values, these appear economically pla
 
 ```{r correlation_analysis}
 
-# --- numeric data (exclude coords + intermediate sentiment counts) ---
+# Select relevant numeric variables for the correlation analysis
+# Numeric data (exclude coords + intermediate sentiment counts)
 airbnb_numeric <- d.merged %>%
   select(
     price,
@@ -556,10 +557,10 @@ airbnb_numeric <- d.merged %>%
     bing_score
   )
 
-# --- correlations ---
-cor_predictors <- cor(airbnb_numeric %>% select(-price), use = "complete.obs")
+# Correlations (default method is 'pearson')
+cor_predictors <- cor(airbnb_numeric %>% select(-price), use = "complete.obs") 
 
-# --- same colors as your example ---
+# Choosing colour
 my_cols <- colorRampPalette(c("#6D9EC1", "white", "#E46726"))(200)
 
 corrplot(
@@ -572,17 +573,16 @@ corrplot(
   addCoef.col  = "black",
   number.cex   = 0.6,
   col          = my_cols,
-  cl.lim       = c(-1, 1),              # force same scale & colors
+  cl.lim       = c(-1, 1),              # Force same scale & colors
   title        = "Correlation Matrix of Airbnb Price Predictors",
   mar          = c(0, 0, 2, 0)
 )
 
-
 ```
 
-To assess the relationships among the main numeric predictors, a correlation matrix was computed. Overall, most variables exhibit weak pairwise correlations, suggesting limited concerns regarding multicollinearity. In particular, availability, minimum nights, host listing count, and sentiment score show only small correlations with other predictors.
+To assess the relationships among the main numeric predictors, a correlation matrix using Pearson's method was computed. Overall, most variables exhibit weak pairwise correlations, suggesting limited concerns regarding multicollinearity. In particular, availability, minimum nights, host listing count, and sentiment score show only small correlations with other predictors.
 
-However, strong positive correlations are observed among the review-related variables. The total number of reviews, the number of reviews in the last twelve months, and reviews per month are highly correlated, indicating that these variables capture a similar underlying dimension of listing popularity. Including all of them simultaneously in a regression model could therefore introduce multicollinearity and inflate standard errors. For this reason, only a the variabel total number of reviews will be included in the linear model done later.
+However, strong positive correlations are observed among the review-related variables. The total number of reviews, the number of reviews in the last twelve months, and reviews per month are highly correlated, indicating that these variables capture a similar underlying dimension of listing popularity. Including all of them simultaneously in a regression model could therefore introduce multicollinearity and inflate standard errors. For this reason, only a the variable total number of reviews will be included in the linear model done later.
 
 Overall, aside from the review-related measures, the correlation matrix suggests that the explanatory variables are largely independent, supporting the robustness of the regression analysis.
 
