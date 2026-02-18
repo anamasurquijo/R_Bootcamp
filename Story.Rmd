@@ -276,7 +276,7 @@ First, a join condition is explicitly defined to link the two datasets by matchi
 
 After performing the merge, sanity checks are carried out to assess whether the join behaved as expected. The total number of rows in the merged dataset is computed and compared with the number of rows in the listings data. In addition, the number of unmatched rows is calculated by counting how many entries have missing values in the review identifier column, indicating listings for which no corresponding review record was found.
 
-```{r merge_and_rename,class.source = "fold-show"}
+```{r merge,class.source = "fold-show"}
 by <- join_by(id == listing_id)
 
 d.merged <- d.listings %>%
@@ -296,7 +296,7 @@ To further investigate unmatched cases, an anti-join is performed between the li
 
 Finally, to improve clarity and avoid ambiguity in the merged dataset, review-related columns are renamed. The review identifier column originating from the reviews table is renamed to review_id, and the review date column is renamed to review_date, making the structure and meaning of the merged data clearer for subsequent analysis.
 
-```{r merge_and_rename,class.source = "fold-show"}
+```{r rename,class.source = "fold-show"}
 # anti_join to inspect any mismatches
 anti_join(d.listings, d.reviews, by = c("id" = "listing_id")) |>
   View()
@@ -1044,7 +1044,7 @@ The distribution of listings per host is highly right-skewed. The median host op
 neighbourhoods <- st_read("Data/neighbourhoods.geojson")
 
 # get hotels from OpenStreetMap
-osm_hotels <- opq("Zurich, Switzerland", timeout = 300) %>%
+osm_hotels <- opq("Zurich, Switzerland", timeout = 400) %>%
   add_osm_feature(key = "tourism", value = "hotel") %>%
   osmdata_sf()
 
@@ -1294,10 +1294,12 @@ For minimum nights, there is no evidence that the effect differs from zero (p = 
 Overall, there is strong evidence that room type, neighbourhood, and review sentiment are important determinants of Airbnb prices in the City of Zurich. Other variables such as review counts, host portfolio size, and availability show statistically significant but economically minor effects, while minimum nights shows no measurable impact. Although the model is statistically robust, the moderate R² indicates that a considerable share of price variation is driven by additional factors not captured in the model.
 
 ## Cross Validation
-```{r cross_validation}
 
-library(dplyr)
-library(caret)
+We additionally evaluate the predictive performance of the models using 5-fold cross-validation. This step is different from the previous regression analysis: while the original linear model was estimated on the full dataset to interpret relationships and coefficients, cross-validation assesses how well the models perform on unseen data. In each fold, the model is trained on part of the data and tested on observations that were not used for estimation.
+
+We compare the original linear model (LM) with a polynomial version that includes nonlinear terms.
+
+```{r cross_validation}
 
 set.seed(123)
 
@@ -1308,8 +1310,8 @@ d.model <- d.listings_with_sentiment %>%
   filter(price > 0) %>%
   mutate(
     log_price = log(price),
-    room_type = factor(room_type),
-    neighbourhood = factor(neighbourhood)
+    room_type = relevel(factor(room_type), ref = "Entire home/apt"),
+    neighbourhood = relevel(factor(neighbourhood), ref = "City")
   )
 
 # ------------------------------------------------------------
@@ -1321,36 +1323,48 @@ cv_control <- trainControl(
 )
 
 # ------------------------------------------------------------
-# 3) Model 1: Original Linear Model
+# 3) Model 1: Original Linear Model (with saving)
 # ------------------------------------------------------------
-cv_lm <- train(
-  log_price ~ room_type + neighbourhood +
-    mean_bing_score + number_of_reviews +
-    calculated_host_listings_count +
-    minimum_nights + availability_365,
-  data = d.model,
-  method = "lm",
-  trControl = cv_control,
-  metric = "RMSE",
-  na.action = na.omit
-)
+if (file.exists("cv_lm_price.rds")) {
+  cv_lm <- readRDS("cv_lm_price.rds")
+} else {
+  cv_lm <- train(
+    log_price ~ room_type + neighbourhood +
+      mean_bing_score + number_of_reviews +
+      calculated_host_listings_count +
+      minimum_nights + availability_365,
+    data = d.model,
+    method = "lm",
+    trControl = cv_control,
+    metric = "RMSE",
+    na.action = na.omit
+  )
+  
+  saveRDS(cv_lm, "cv_lm_price.rds")
+}
 
 # ------------------------------------------------------------
-# 4) Model 2: Polynomial Linear Model (adds nonlinear terms)
+# 4) Model 2: Polynomial Linear Model (with saving)
 # ------------------------------------------------------------
-cv_poly <- train(
-  log_price ~ room_type + neighbourhood +
-    mean_bing_score + I(mean_bing_score^2) +
-    number_of_reviews + I(number_of_reviews^2) +
-    calculated_host_listings_count +
-    minimum_nights + I(minimum_nights^2) +
-    availability_365 + I(availability_365^2),
-  data = d.model,
-  method = "lm",
-  trControl = cv_control,
-  metric = "RMSE",
-  na.action = na.omit
-)
+if (file.exists("cv_poly_price.rds")) {
+  cv_poly <- readRDS("cv_poly_price.rds")
+} else {
+  cv_poly <- train(
+    log_price ~ room_type + neighbourhood +
+      mean_bing_score + I(mean_bing_score^2) +
+      number_of_reviews + I(number_of_reviews^2) +
+      calculated_host_listings_count +
+      minimum_nights + I(minimum_nights^2) +
+      availability_365 + I(availability_365^2),
+    data = d.model,
+    method = "lm",
+    trControl = cv_control,
+    metric = "RMSE",
+    na.action = na.omit
+  )
+  
+  saveRDS(cv_poly, "cv_poly_price.rds")
+}
 
 # ------------------------------------------------------------
 # 5) Compare numerical results
@@ -1368,18 +1382,15 @@ summary(res)
 bwplot(res, metric = "RMSE")     # lower = better
 bwplot(res, metric = "Rsquared") # higher = better
 
-
 ```
 
-We compare the original linear model (LM) with a polynomial version using 5-fold cross-validation.
+In the first plot (RMSE), lower values indicate better predictive performance. The linear model has a slightly lower average RMSE than the polynomial model. This means that, when predicting unseen data, the linear model produces slightly smaller prediction errors.
 
-In the first plot (RMSE), lower values indicate better predictive performance. The linear model has a slightly lower average RMSE than the polynomial model. This means that, on unseen data, the linear model makes slightly smaller prediction errors than the polynomial model.
+In the second plot (R²), higher values indicate better explanatory power in the test folds. Again, the linear model shows a slightly higher average R² than the polynomial model. Thus, it explains slightly more of the variation in log prices in out-of-sample predictions.
 
-In the second plot (R²), higher values indicate better explanatory power. The linear model also has a slightly higher average R² than the polynomial model. This suggests that the linear model explains a bit more of the variation in log prices compared to the polynomial model.
+The boxplots display the distribution of performance across the five folds. Both models perform relatively similarly, but the polynomial model shows somewhat more variability and does not deliver any consistent improvement.
 
-The boxplots show the distribution of the performance across the folds. The results for both models are relatively similar, but the polynomial model shows slightly more variability and does not improve performance.
-
-Overall, there is no evidence that adding polynomial (nonlinear) terms improves predictive accuracy. In fact, the simpler linear model performs slightly better and is more stable across folds. Therefore, the linear model is preferred, as it achieves similar or better predictive performance while remaining easier to interpret.
+Overall, there is no evidence that adding polynomial (nonlinear) terms improves predictive accuracy for unseen data. The simpler linear model performs at least as well — and slightly better — while being more stable and easier to interpret. Therefore, the linear model is preferred.
 
 # Conclusions
 
