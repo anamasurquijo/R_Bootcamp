@@ -100,13 +100,13 @@ The two datasets are merged using the unique listing identifier. This combined d
 
 ```{r unpacking, eval=FALSE}
 library(R.utils)
-gunzip("Data/reviews.csv.gz")
+gunzip("../Data/reviews.csv.gz")
 ```
 
 First, the listings and reviews datasets are imported from CSV files using read_csv and stored as d.listings and d.reviews. Let us import the csvs and get an overview of how the datasets look like to get a first impression. For this we start importing and using the glimpse function of the dplyr package as the head and str functions of base R do not make it that clean.
 
 ```{r importing_listings}
-d.listings <- read_csv("Data/listings.csv")
+d.listings <- read_csv("../Data/listings.csv")
 glimpse(d.listings)
 ```
 
@@ -215,7 +215,7 @@ d.listings %>%
 Now let us import and inspect the reviews.csv.
 
 ```{r importing_reviews}
-d.reviews <- read_csv("Data/reviews.csv")
+d.reviews <- read_csv("../Data/reviews.csv")
 glimpse(d.reviews)
 ```
 
@@ -776,7 +776,7 @@ With this visualization it is possible double down on some of the insights and h
 
 ```{r minimum_nights_neighbourhood}
 
-geojson <- st_read("Data/neighbourhoods.geojson")
+geojson <- st_read("../Data/neighbourhoods.geojson")
 
 listings <- d.merged %>%
   distinct(id, .keep_all = TRUE)
@@ -999,13 +999,6 @@ listings_per_host <- listings_per_host %>%
     levels = c(as.character(1:9), "10+")        # ensure "10+" appears at the end
   ))
 
-# bar chart showing the number of hosts by listings per host group
-ggplot(data = listings_per_host,
-       mapping = aes(x = listings_group)) +
-  geom_bar() +
-  xlab("Listings per host") +
-  ylab("Number of hosts")
-
 
 # create mean and median lines and legend
 stats_lines <- data.frame(
@@ -1041,27 +1034,36 @@ The distribution of listings per host is highly right-skewed. The median host op
 ```{r hotels_neighbourhood}
 
 # load neighbourhood polygons (GeoJSON file)
-neighbourhoods <- st_read("Data/neighbourhoods.geojson")
+neighbourhoods <- st_read("../Data/neighbourhoods.geojson")
 
-# get hotels from OpenStreetMap
-osm_hotels <- opq("Zurich, Switzerland", timeout = 400) %>%
-  add_osm_feature(key = "tourism", value = "hotel") %>%
-  osmdata_sf()
+# Check if hotels data already exists
+if (file.exists("../Data/osm_hotels_zurich.rds")) {
+  osm_hotels <- readRDS("../Data/osm_hotels_zurich.rds")
+} else {
+  
+  # get hotels from OpenStreetMap
+  osm_hotels <- opq("Zurich, Switzerland", timeout = 500) %>%
+    add_osm_feature(key = "tourism", value = "hotel") %>%
+    osmdata_sf()
+  
+  # Save hotels data
+  saveRDS(osm_hotels, "../Data/osm_hotels_zurich.rds")
+}
 
 # keep hotel polygons and convert each polygon to ONE point
 hotels <- st_point_on_surface(osm_hotels$osm_polygons)
 
-# --- Airbnb: use d.merged, only 2025, one row per apartment id  <-- CAMBIADO
-airbnb_2025 <- d.merged %>%                                    # <-- CAMBIADO
+# --- Airbnb: use d.merged, only 2025, one row per apartment id
+airbnb_2025 <- d.merged %>%
   filter(year(review_date) == 2025) %>%
-  distinct(id, .keep_all = TRUE)                               # <-- CAMBIADO
+  distinct(id, .keep_all = TRUE)
 
 # simple interactive map with neighbourhoods and hotels
 leaflet() %>%
   addTiles() %>%
   addPolygons(
-    data = neighbourhoods, # add base map
-    weight = 2,            # thinner borders
+    data = neighbourhoods,
+    weight = 2,
     fill = 1
   ) %>%
   addCircleMarkers(
@@ -1069,11 +1071,9 @@ leaflet() %>%
     radius = 2,
     fillOpacity = 1,
     color = "black"
-  ) %>% 
-
-  # Airbnb listings (filtered 2025, unique ids)  <-- CAMBIADO
+  ) %>%
   addCircleMarkers(
-    data = airbnb_2025,                                        # <-- CAMBIADO
+    data = airbnb_2025,
     lng = ~longitude,
     lat = ~latitude,
     radius = 2,
@@ -1215,8 +1215,8 @@ ggplot(d.merged, aes(x = number_of_reviews, y = log(price))) +
 ```{r linear_model}
 
 # Check if model already exists
-if (file.exists("lm_model.rds")) {
-  lm_model <- readRDS("lm_model.rds")
+if (file.exists("../Models/lm_model.rds")) {
+  lm_model <- readRDS("../Models/lm_model.rds")
 } else {
   
 # log
@@ -1325,8 +1325,8 @@ cv_control <- trainControl(
 # ------------------------------------------------------------
 # 3) Model 1: Original Linear Model (with saving)
 # ------------------------------------------------------------
-if (file.exists("cv_lm_price.rds")) {
-  cv_lm <- readRDS("cv_lm_price.rds")
+if (file.exists("../Models/cv_lm_price.rds")) {
+  cv_lm <- readRDS("../Models/cv_lm_price.rds")
 } else {
   cv_lm <- train(
     log_price ~ room_type + neighbourhood +
@@ -1340,14 +1340,14 @@ if (file.exists("cv_lm_price.rds")) {
     na.action = na.omit
   )
   
-  saveRDS(cv_lm, "cv_lm_price.rds")
+  saveRDS(cv_lm, "../Models/cv_lm_price.rds")
 }
 
 # ------------------------------------------------------------
 # 4) Model 2: Polynomial Linear Model (with saving)
 # ------------------------------------------------------------
-if (file.exists("cv_poly_price.rds")) {
-  cv_poly <- readRDS("cv_poly_price.rds")
+if (file.exists("../Models/cv_poly_price.rds")) {
+  cv_poly <- readRDS("../Models/cv_poly_price.rds")
 } else {
   cv_poly <- train(
     log_price ~ room_type + neighbourhood +
@@ -1363,7 +1363,7 @@ if (file.exists("cv_poly_price.rds")) {
     na.action = na.omit
   )
   
-  saveRDS(cv_poly, "cv_poly_price.rds")
+  saveRDS(cv_poly, "../Models/cv_poly_price.rds")
 }
 
 # ------------------------------------------------------------
