@@ -140,49 +140,55 @@ d.listings %>%
                values_to = "n_missing") %>%
   filter(n_missing > 0) %>%          # keeps only variables with missing values
   arrange(desc(n_missing))
+
 ```
 
 Based on this inspection, the column license will be removed from the listings dataset, as our assumption that it only contained missing values was correct. For reviews_per_month and last_review the same amount of observations are missing, which makes us assume, that these will probably be from the same airbnbs, that probably never had a review at all. The missing price is also close to the reviews missing. But lets look at how much % these missing observations actually are:
 
 ```{r missing_percentage}
+
+# Compute percentage of missing values per variable
 d.listings %>%
-  summarise(across(everything(), ~ mean(is.na(.x)))) %>%
+  summarise(across(everything(), ~ mean(is.na(.x)))) %>% # Share of NA values for each column
   pivot_longer(everything(),
                names_to = "variable",
-               values_to = "pct_missing") %>%
-  mutate(pct_missing = pct_missing * 100) %>%
-  filter(pct_missing > 0) %>%
+               values_to = "pct_missing") %>% 
+  mutate(pct_missing = pct_missing * 100) %>% # Convert proportion to percentage
+  filter(pct_missing > 0) %>%  # Keep only variables with missing values
   ggplot(aes(x = pct_missing,
              y = reorder(variable, pct_missing))) +
-  geom_segment(aes(x = 0, xend = pct_missing,
-                   yend = variable)) +
-  geom_point(size = 3) +
+  geom_segment(aes(x = 0, xend = pct_missing, # Draw horizontal line from 0 to % missing
+                   yend = variable)) + 
+  geom_point(size = 3) + # Add point at end of each line
   labs(title = "Percentage of Missing Values",
        x = "Missing (%)",
        y = NULL)
+
 ```
 
 The percentages are quite notable, for the 3 almost 25%. But are the observations of price missing the same as for the other 2? Let's check for this the missing pattern visualization and also to see, if the data is missing systematically.
 
 ```{r missing_pattern}
+
 d.listings %>%
-  mutate(row_id = row_number()) %>%
+  mutate(row_id = row_number()) %>% # Create a row identifier for plotting
   pivot_longer(
     -row_id,
     names_to = "variable",
     values_to = "value",
-    values_transform = list(value = as.character)   # fix here
+    values_transform = list(value = as.character)   # Convert all values to character for consistent reshaping
   ) %>%
-  mutate(is_missing = is.na(value)) %>%
+  mutate(is_missing = is.na(value)) %>% # Flag whether each cell is missing
   ggplot(aes(x = variable, y = row_id, fill = is_missing)) +
-  geom_raster() +
+  geom_raster() +                       # Draw a tile for each cell in the dataset
   scale_fill_manual(values = c("FALSE" = "white",
                                "TRUE"  = "red")) +
   labs(title = "Missing Data Pattern",
        x = NULL,
        y = NULL,
        fill = "Missing") +
-  theme(axis.text.x = element_text(angle = 90))
+  theme(axis.text.x = element_text(angle = 90)) # Rotate variable names for readability
+
 ```
 
 The visualization clearly shows, that the missing price observations are mostly not the same airbnbs as the ones that did not have reviews.
@@ -192,6 +198,7 @@ While we will replace the missing values of reviews per month variables with zer
 Finally, the listings dataset is checked for duplicate listing identifiers. This is done by counting how often each id appears, filtering for those that occur more than once, and displaying only the distinct duplicated entries. This step verifies whether the primary key in the listings data is unique, which is important for reliable joins and further analysis.
 
 ```{r listings_missing, include=FALSE}
+
 # Remove column 'license' (contains only missing values)
 d.listings <- d.listings %>% 
   select(-license)
@@ -216,11 +223,13 @@ Now let us import and inspect the reviews.csv.
 ```{r importing_reviews}
 d.reviews <- read_csv("../Data/reviews.csv")
 glimpse(d.reviews)
+
 ```
 
 First, the ids are also converted from double to character and we check for missing values.
 
 ```{r reviews_transformations, include=FALSE}
+
 # Convert ids to characters
 d.reviews <- d.reviews %>%
   mutate(
@@ -243,6 +252,7 @@ d.reviews %>%
 There are only 4 missing values in the comments column, these are replaced with the string "Unknown" so that all review records contain a valid text entry and can be processed consistently. Afterwards, all non-English comments are deleted, which represent 28.2% of the total comments. It is explained in the next section why this was done.
 
 ```{r reviews_missing,include=FALSE}
+
 d.reviews <- d.reviews %>% 
   replace_na(list(comments = "Unknown"))
 
@@ -266,7 +276,6 @@ tibble(
   pct_deleted            = round(100 * n_deleted / n_total, 2)
 )
 
-
 ```
 
 After cleaning the 2 datasets separately, we can continue to merged them.
@@ -276,6 +285,7 @@ First, a join condition is explicitly defined to link the two datasets by matchi
 After performing the merge, sanity checks are carried out to assess whether the join behaved as expected. The total number of rows in the merged dataset is computed and compared with the number of rows in the listings data. In addition, the number of unmatched rows is calculated by counting how many entries have missing values in the review identifier column, indicating listings for which no corresponding review record was found.
 
 ```{r merge,class.source = "fold-show"}
+
 by <- join_by(id == listing_id)
 
 d.merged <- d.listings %>%
@@ -289,6 +299,7 @@ d.merged %>%
     total = n(),
     unmatched = sum(is.na(id.y))
   )
+
 ```
 
 To further investigate unmatched cases, an anti-join is performed between the listings and reviews datasets. This operation returns only those listings that do not have a matching review. The result is inspected manually using the View() function, allowing a detailed examination of all columns. This inspection confirms that the unmatched entries correspond to listings without any reviews, which explains the absence of a matching listing_id in the reviews data, particularly given that the last_review field contains only missing values for these cases.
@@ -296,6 +307,7 @@ To further investigate unmatched cases, an anti-join is performed between the li
 Finally, to improve clarity and avoid ambiguity in the merged dataset, review-related columns are renamed. The review identifier column originating from the reviews table is renamed to review_id, and the review date column is renamed to review_date, making the structure and meaning of the merged data clearer for subsequent analysis.
 
 ```{r rename,class.source = "fold-show"}
+
 # anti_join to inspect any mismatches
 anti_join(d.listings, d.reviews, by = c("id" = "listing_id")) |>
   View()
@@ -378,18 +390,22 @@ glimpse(d.merged)
 While we have now the bing_score per comment, it will be interesting to have also a final dataset that shows the mean bing_score per airbnb and the number of reviews, in order to kind of create a mean rating of each of the airbnbs and also see if this is trustworthy depending on the number of reviews (if just one review, it is not that representative).
 
 ```{r meanumber_of_reviews_airbnb}
+
+# Compute listing-level sentiment measures from review data
 listing_sentiment <- d.merged %>%
   group_by(id) %>%
   summarise(
-    mean_bing_score = mean(bing_score[!is.na(review_id)], na.rm = TRUE),
-    n_english_reviews = sum(!is.na(review_id)),
+    mean_bing_score = mean(bing_score[!is.na(review_id)], na.rm = TRUE), # Average sentiment per listing
+    n_english_reviews = sum(!is.na(review_id)),  # Count of English reviews
     .groups = "drop"
   )
 
+# Merge back
 d.listings_with_sentiment <- d.listings %>%
   left_join(listing_sentiment, by = "id")
 
 glimpse(d.listings_with_sentiment)
+
 ```
 
 **Limitations** The sentiment analysis is based on a simple binary lexicon and ignores context, word order, and negations. Therefore, phrases like “not bad” or “not dirty” may be incorrectly classified as negative. Sarcasm and nuanced language are also not captured.
@@ -417,7 +433,7 @@ vars_exclude <- c(
 # Create a summary table for the remaining numeric variables
 num_summary <- d.merged %>%
 
-  # Keep ONLY numeric variables and remove unwanted ones
+  # Keep only numeric variables and remove unwanted ones
   # This ensures we compute statistics only on meaningful quantities
   select(
     where(is.numeric),
@@ -565,15 +581,15 @@ my_cols <- colorRampPalette(c("#6D9EC1", "white", "#E46726"))(200)
 
 corrplot(
   cor_predictors,
-  method       = "color",
-  type         = "upper",
-  tl.col       = "black",
-  tl.srt       = 45,
-  tl.cex       = 0.8,
-  addCoef.col  = "black",
-  number.cex   = 0.6,
-  col          = my_cols,
-  cl.lim       = c(-1, 1),              # Force same scale & colors
+  method       = "color",  # Use colored squares to show correlation strength
+  type         = "upper",  # Display only the upper triangle of the matrix
+  tl.col       = "black",  # Text label color
+  tl.srt       = 45,       # Rotate variable labels for readability
+  tl.cex       = 0.8,      # Label text size
+  addCoef.col  = "black",  # Print correlation coefficients in each cell
+  number.cex   = 0.6,      # Size of coefficient text
+  col          = my_cols, 
+  cl.lim       = c(-1, 1), # Fix color scale from -1 to 1          
   title        = "Correlation Matrix of Airbnb Price Predictors",
   mar          = c(0, 0, 2, 0)
 )
@@ -629,6 +645,7 @@ ggplot(
     hjust = -0.1,
     size = 4
   ) +
+  # choose colours of types
   scale_fill_manual(
     values = c(
       "Entire home/apt" = "#08519c",
@@ -650,6 +667,7 @@ ggplot(
   )
   
 ```
+
 The visualisation shows that the majority of listings are rented as entire homes or apartments, followed by private rooms. Shared rooms and hotel rooms account for only a very small fraction of total listings. Private and shared room rentals — where guests stay within a dwelling that is also occupied by the host — make up roughly one quarter of the market. In these cases, Airbnb may serve as a supplementary source of income for residents, for example to help cover Zurich’s relatively high housing costs or to monetise unused space during certain periods of the year.
 
 In contrast, approximately three quarters of listings consist of entire apartments. These listings may reflect different use cases. Some may be operated by professional or semi-professional hosts managing multiple properties. Others may belong to individual residents who temporarily rent out their full apartment while travelling, for example during holidays. However, unlike private room rentals, entire-home listings involve complete residential units and may therefore have a more direct impact on the availability of long-term housing.
@@ -662,29 +680,29 @@ After understanding what types of accommodation are offered, the next important 
 
 ```{r listings_per_host}
 
-# compute the number of listings per host
+# Compute the number of listings per host
 listings_per_host <- d.merged %>%
-  distinct(host_id, id) %>%                    # keep one row per listing per host
-  count(host_id, name = "listings_per_host")   # count listings per host
+  distinct(host_id, id) %>%                    # Keep one row per listing per host
+  count(host_id, name = "listings_per_host")   # Count listings per host
 
-# group hosts with 10 or more listings
+# Group hosts with 10 or more listings
 listings_per_host <- listings_per_host %>%
   mutate(listings_group =
            ifelse(
-             listings_per_host >= 10,           # condition: 10+ listings
-             "10+",                             # group them as "10+"
-             as.character(listings_per_host)    # otherwise keep exact number
+             listings_per_host >= 10,           # Condition: 10+ listings
+             "10+",                             # Group them as "10+"
+             as.character(listings_per_host)    # Otherwise keep exact number
            ))
 
-# convert grouped variable into a factor to order on the x-axis
+# Convert grouped variable into a factor to order on the x-axis
 listings_per_host <- listings_per_host %>%
   mutate(listings_group = factor(
     listings_group,
-    levels = c(as.character(1:9), "10+")        # ensure "10+" appears at the end
+    levels = c(as.character(1:9), "10+")        # Ensure "10+" appears at the end
   ))
 
 
-# create mean and median lines and legend
+# Create mean and median lines and legend
 stats_lines <- data.frame(
   statistic = c(
     paste0("Mean = ", round(mean(listings_per_host$listings_per_host), 2)),
@@ -696,9 +714,11 @@ stats_lines <- data.frame(
   )
 )
 
+# Bar chart 
 ggplot(listings_per_host, aes(x = listings_group)) +
   geom_bar() +
-  
+
+  # Draw mean and median lines
   geom_vline(data = stats_lines,
              aes(xintercept = value,
                  color = statistic,
@@ -710,6 +730,7 @@ ggplot(listings_per_host, aes(x = listings_group)) +
   
   xlab("Listings per host") +
   ylab("Number of hosts")
+
 ```
 
 The distribution of listings per host is highly right-skewed. The median host operates a single listing, while the mean of 2.23 listings per host reflects the presence of a smaller group of multi-listing hosts. This indicates that the Airbnb market is primarily composed of individual hosts, although a minority of more professional hosts contributes disproportionately to total supply. 
@@ -720,19 +741,24 @@ The histogram illustrates the distribution of minimum stay requirements for Airb
 
 ```{r minimum_nights}
 
+# Keep one row per listing (unique id) to ensure
+# each listing is counted only once
 interim <- d.merged %>%
   distinct(id, .keep_all = TRUE)
 
+# Create a histogram of minimum nights 
+# to show how listing requirements are distributed
 ggplot(
-  interim %>% filter(minimum_nights <= 35),
+  interim %>% filter(minimum_nights <= 35), # Restrict to 35 or fewer
   aes(x = minimum_nights)
 ) +
   geom_histogram(
-    binwidth = 1,
-    fill = "#3182bd",
-    alpha = 0.8,
-    boundary = 0
+    binwidth = 1,        # Width of each bin (1 unit per bar)
+    fill = "#3182bd",  # Bar color
+    alpha = 0.8,         # Transparency level
+    boundary = 0         # Align bins to start at 0
   ) +
+  # Set x-axis ticks from 0 to 35 in steps of 2
   scale_x_continuous(breaks = seq(0, 35, 2)) +
   labs(
     title = "Distribution of minimum nights (1–35, listing level)",
@@ -751,6 +777,8 @@ Overall, the distribution reveals a dominant short-term rental segment character
 
 ```{r  minimum nights, include=FALSE}
 
+# Calculate the distribution of minimum nights per unique listing,
+# including counts, relative shares, and cumulative shares
 min_nights <- d.merged %>%
   distinct(id, minimum_nights) %>%
   count(minimum_nights) %>%
@@ -760,6 +788,7 @@ min_nights <- d.merged %>%
     cum_share = cumsum(share)
   )
 
+# Print 53 rows for inspection
 print(n = 53, min_nights)
 
 ```
@@ -774,10 +803,11 @@ geojson <- st_read("../Data/neighbourhoods.geojson")
 
 ```{r minimum_nights_neighbourhood}
 
+# Load unique listings
 listings <- d.merged %>%
   distinct(id, .keep_all = TRUE)
 
-# mean minimum_nights per neighbourhood
+# Mean minimum_nights per neighbourhood
 neigh_stats <- listings %>%
   group_by(neighbourhood) %>%
   summarise(
@@ -790,27 +820,29 @@ neigh_stats <- listings %>%
 geo_min <- geojson %>%
   left_join(neigh_stats, by = "neighbourhood")
 
+# Transform coordinates to WGS84 (required for leaflet maps)
 geo_min_4326 <- st_transform(geo_min, 4326)
 
 # Point per neighbourhood (for bubbles)
 neigh_pts <- st_point_on_surface(geo_min_4326)
 coords    <- st_coordinates(neigh_pts)
 
+# Extract longitude and latitude into a regular data frame
 pts_df <- cbind(
   st_drop_geometry(neigh_pts),
   lon = coords[, "X"],
   lat = coords[, "Y"]
 )
 
-# Colour + size
+# Define colour palette and scale bubble sizes by mean minimum nights
 pal <- colorNumeric("cividis", domain = pts_df$mean_minimum_nights)
 radius_scaled <- rescale(pts_df$mean_minimum_nights, to = c(4, 16))
 
-# Interactive leaflet map with neighbourhood borders
+# Interactive leaflet map with neighbourhood borders and bubbles
 leaflet(geo_min_4326) %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik) %>%
   
-  # neighbourhood outlines 
+  # Neighbourhood outlines 
   addPolygons(
     color         = "#444444",     # border colour
     weight        = 1.2,           # thickness of line
@@ -824,15 +856,15 @@ leaflet(geo_min_4326) %>%
     label = ~neighbourhood         # hover label on polygons 
   ) %>%
   
-  # bubbles per neighbourhood
+  # Add one bubble per neighbourhood
   addCircleMarkers(
     data        = pts_df,
     lng         = ~lon,
     lat         = ~lat,
     radius      = radius_scaled,
-    color       = "#ffffff",
+    color       = "#ffffff",   # White border around bubbles
     weight      = 1,
-    fillColor   = ~pal(mean_minimum_nights),
+    fillColor   = ~pal(mean_minimum_nights), # Fill color based on mean minimum nights
     fillOpacity = 0.85,
     popup = ~paste0(
       "<b>", neighbourhood, "</b><br>",
@@ -867,11 +899,12 @@ neighbourhoods <- st_read("../Data/neighbourhoods.geojson")
 
 ```{r hotels_neighbourhood}
 # Check if hotels data already exists
+# Otherwise, download it from OpenStreetMap and save it for future use
 if (file.exists("../Data/osm_hotels_zurich.rds")) {
   osm_hotels <- readRDS("../Data/osm_hotels_zurich.rds")
 } else {
   
-  # get hotels from OpenStreetMap
+  # Get hotels from OpenStreetMap
   osm_hotels <- opq("Zurich, Switzerland", timeout = 500) %>%
     add_osm_feature(key = "tourism", value = "hotel") %>%
     osmdata_sf()
@@ -880,28 +913,32 @@ if (file.exists("../Data/osm_hotels_zurich.rds")) {
   saveRDS(osm_hotels, "../Data/osm_hotels_zurich.rds")
 }
 
-# keep hotel polygons and convert each polygon to ONE point
+# Keep hotel polygons and convert each polygon to 1 point
+# (leaflet works more easily with points for markers)
 hotels <- st_point_on_surface(osm_hotels$osm_polygons)
 
-# --- Airbnb: use d.merged, only 2025, one row per apartment id
+# Keep only Airbnb listings from 2025 and ensure one row per listing
 airbnb_2025 <- d.merged %>%
   filter(year(review_date) == 2025) %>%
   distinct(id, .keep_all = TRUE)
 
-# simple interactive map with neighbourhoods and hotels
+# Simple interactive map with neighbourhoods and hotels
 leaflet() %>%
-  addTiles() %>%
+  addTiles() %>% # Base map
+  # Add neighbourhood boundaries
   addPolygons(
     data = neighbourhoods,
     weight = 2,
     fill = 1
   ) %>%
+  # Add hotels as small black dots
   addCircleMarkers(
     data = hotels, 
     radius = 2,
     fillOpacity = 1,
     color = "black"
   ) %>%
+  # Add Airbnb listings (2025) as red dots
   addCircleMarkers(
     data = airbnb_2025,
     lng = ~longitude,
@@ -927,12 +964,15 @@ For the City of Zurich, this spatial differentiation is particularly relevant. I
 To assess how the relevance of Airbnb has evolved over time, it is important to examine the development of listing numbers in Zurich. The following figure illustrates the annual growth in Airbnb listings and provides insight into how strongly the platform has expanded within the city’s accommodation market.
 
 ```{r evolution airbnbs}
+
+# Count the number of unique listings per year
 listings_per_year <- d.merged %>%
   filter(!is.na(review_date)) %>%
-  mutate(year = year(review_date)) %>%
+  mutate(year = year(review_date)) %>% # Extract year from the review date
   group_by(year) %>%
   summarise(n_listings = n_distinct(id))
 
+# Plot the development of listings over time using an area chart
 ggplot(listings_per_year, aes(x = year, y = n_listings)) +
   geom_area() +
   labs(
@@ -940,25 +980,29 @@ ggplot(listings_per_year, aes(x = year, y = n_listings)) +
     x = "Year",
     y = "Number of Listings"
   )
-```
-The figure shows a strong upward trend in the number of Airbnb listings in Zurich over time. After gradual growth in the early years, listings increased steadily until 2019. Around 2020, growth temporarily slowed, likely due to the COVID-19 pandemic. From 2021 onward, the number of listings rose sharply, reaching approximately 1,500 by 2025. Overall, the trend indicates that Airbnb has become an increasingly important part of Zurich’s accommodation market.
 
+```
+
+The figure shows a strong upward trend in the number of Airbnb listings in Zurich over time. After gradual growth in the early years, listings increased steadily until 2019. Around 2020, growth temporarily slowed, likely due to the COVID-19 pandemic. From 2021 onward, the number of listings rose sharply, reaching approximately 1,500 by 2025. Overall, the trend indicates that Airbnb has become an increasingly important part of Zurich’s accommodation market.
 
 ## Evolution of reviews - How happy are guests with airbnbs and how have the ratings evolved over time?
 
 Not only the airbnb listings, also the reviews 
 
 ```{r reviews_evolution}
+
+# Count the number of reviews per year and sentiment category (bing_score)
 reviews_year <- d.merged %>%
-  filter(!is.na(review_date)) %>%
-  mutate(year = year(review_date)) %>%
+  filter(!is.na(review_date)) %>%      # Keep only rows with a review date
+  mutate(year = year(review_date)) %>% # Extract year from review date
   group_by(year, bing_score) %>%
   summarise(number_of_reviews = n(), .groups = "drop")
 
+# Plot how review volume evolves over time by sentiment
 ggplot(reviews_year,
        aes(x = year, y = number_of_reviews, fill = factor(bing_score))) +
-  geom_area() +
-  scale_fill_manual(
+  geom_area() +                    # Stacked area chart
+  scale_fill_manual(               # Manually assign colors to sentiments
     values = c("-1" = "red",
                "0"  = "yellow",
                "1"  = "green")
@@ -968,7 +1012,9 @@ ggplot(reviews_year,
     x = "Year",
     y = "Number of Reviews"
   )
+
 ```
+
 The figure shows a strong increase in the total number of Airbnb reviews over time, closely mirroring the growth in listings. Reviews rise steadily until 2019, decline sharply around 2020—likely due to the COVID-19 pandemic—and then increase rapidly again from 2021 onward.
 
 The vast majority of reviews are positive (green), while neutral and negative reviews represent only a small share throughout the period. This indicates consistently high customer satisfaction despite the rapid expansion of the platform.
@@ -979,17 +1025,18 @@ Overall, the trend suggests both growing market activity and persistently positi
 
 Below the two maps visualize negative reviews. The left map displays the absolute number of negative reviews, while the right map shows the proportion of negative reviews.
 
-
 ```{r reviews_maps}
 
+# Count number of negative reviews per neighbourhood
 neg_stats <- d.merged %>%
-  filter(bing_score == -1) %>%
+  filter(bing_score == -1) %>%     # Keep only negative reviews
   group_by(neighbourhood) %>%
   summarise(
     n_negative_reviews = n(),
     .groups = "drop"
   )
 
+# Count total number of reviews per neighbourhood
 all_stats <- d.merged %>%
   group_by(neighbourhood) %>%
   summarise(
@@ -997,15 +1044,18 @@ all_stats <- d.merged %>%
     .groups = "drop"
   )
 
+# Combine both datasets and compute share of negative reviews
 neg_stats <- neg_stats %>%
   left_join(all_stats, by = "neighbourhood") %>%
   mutate(
     share_negative = n_negative_reviews / number_of_reviews
   )
 
+# Join review statistics to neighbourhood geometry
 geo_neg <- geojson %>%
   left_join(neg_stats, by = "neighbourhood")
 
+# Map 1: absolute number of negative reviews per neighbourhood
 p_count <- ggplot(geo_neg) +
   geom_sf(aes(fill = n_negative_reviews), color = "white", linewidth = 0.2) +
   scale_fill_viridis_c(
@@ -1019,6 +1069,7 @@ p_count <- ggplot(geo_neg) +
   ) +
   theme_minimal()
 
+# Map 2: share of negative reviews
 p_share <- ggplot(geo_neg) +
   geom_sf(aes(fill = share_negative), color = "white", linewidth = 0.2) +
   scale_fill_viridis_c(
@@ -1033,10 +1084,10 @@ p_share <- ggplot(geo_neg) +
   ) +
   theme_minimal()
 
+# Combine both maps into one figure with a shared overall title
 p_count + p_share + plot_annotation(
   title = "Negative Airbnb reviews in Zürich by neighbourhood"
 )
-
 
 ```
 
@@ -1051,6 +1102,7 @@ Overall, the share of negative reviews is much more informative than the absolut
 The visual below displays once the mean price and once the number of stays each per neighbourhood. The higher the value the lighter the coloring of the neighbourhood.
 
 ```{r price_number_stays_neighbourhood}
+
 listings <- d.merged %>%
   distinct(id, .keep_all = TRUE)
 
@@ -1090,11 +1142,12 @@ p_stays <- ggplot(geo_stats) +
 
 # Combine plots
 p_price + p_stays + plot_annotation(title = "Neighbourhoods in Zürich")
+
 ```
+
 The prices tend to be higher the closer the neighbourhood group is to the city center. This does not come as a surprise as most people want to minimize their time spent traveling to the city center for their stays. Therefore, listings close to the city center are desired and prices reflect this demand.
 
 However, the number of stays per neighbourhoods reveals, that while the city center is the most popular according to number of stays, other neighbourhoods in close proximity also record a lot of bookings and are quite popular among guests.
-
 
 ## Neighbourhood group characteristics
 
@@ -1109,13 +1162,14 @@ listings <- d.merged %>%
 radar_raw <- listings %>%
   group_by(neighbourhood_group) %>%
   summarise(
-    n_hosts        = n_distinct(host_id),
-    n_listings     = n(),  # number of listings in this group
-    mean_price      = mean(price, na.rm = TRUE),
-    mean_min_nights = mean(minimum_nights, na.rm = TRUE),
+    n_hosts        = n_distinct(host_id),                  # unique hosts in the group
+    n_listings     = n(),                                  # number of listings in this group
+    mean_price      = mean(price, na.rm = TRUE),           # mean price
+    mean_min_nights = mean(minimum_nights, na.rm = TRUE),  # mean minimum nights
     .groups = "drop"
   )
 
+# Rescale all indicators to 0–100 so they can be compared on the same radar chart
 radar_scaled <- radar_raw %>%
   mutate(
     n_hosts        = rescale(n_hosts,        to = c(0, 100)),
@@ -1131,6 +1185,7 @@ par(mfrow = c(3, 4), mar = c(1, 1, 3, 1))
 axis_max <- apply(radar_scaled[, -1], 2, max)
 axis_min <- apply(radar_scaled[, -1], 2, min)
 
+# Draw one radar chart per neighbourhood_group
 for (g in radar_scaled$neighbourhood_group) {
   # pick one neighbourhood
   row_g <- radar_scaled %>%
@@ -1141,6 +1196,7 @@ for (g in radar_scaled$neighbourhood_group) {
   df_radar <- rbind(axis_max, axis_min, row_g)
   rownames(df_radar) <- c("max", "min", as.character(g))
 
+  # Plot the radar chart with consistent styling across panels
   radarchart(
     df_radar,
     axistype = 1,
@@ -1169,8 +1225,6 @@ Some of the groups more far away from the city center like Kreis 12 display a ve
 
 Kreis 3 and 4 with the popular neighbourhood's have profiles with the most hosts and listings indicating the most active market. Which might be also the most affected by possible changes to renting regulations.
 
-
-
 # Model - Prediction of price - Which factors significantly determine Airbnb prices in Zurich?
 
 ## Review vs Prices
@@ -1178,10 +1232,13 @@ Kreis 3 and 4 with the popular neighbourhood's have profiles with the most hosts
 Prior to estimating the linear model, we conduct a visual inspection of the relationship between review activity and prices. The plots below examine whether listings with more reviews tend to command different prices and whether this pattern varies by room type or sentiment score.
 
 ```{r facetting}
+
+# Scatterplot of number of reviews vs log(price), excluding zero prices
+# Adds a linear regression line to show the overall trend
 ggplot(d.merged %>% filter(price > 0), 
        aes(x = number_of_reviews, y = log(price))) +
-  geom_point(alpha = 0.2) +
-  geom_smooth(method = "lm", se = FALSE) +
+  geom_point(alpha = 0.2) +                 # Semi-transparent points to reduce overplotting
+  geom_smooth(method = "lm", se = FALSE) +  # Linear trend line without confidence band
   theme_minimal() +
   labs(
     title = "Relationship Between Number of Reviews and Log Price",
@@ -1189,19 +1246,24 @@ ggplot(d.merged %>% filter(price > 0),
     y = "Log(Price)"
   )
 
+# Same relationship, but split by room type
+# This allows comparison of trends across different accommodation types
 ggplot(d.merged, aes(x = number_of_reviews, y = log(price))) +
   geom_point(alpha = 0.2) +
   geom_smooth(method = "lm", se = FALSE) +
-  facet_wrap(~ room_type) +
+  facet_wrap(~ room_type) +              # One panel per room type
   theme_minimal()
 
+# Same relationship, but split by sentiment category (bing_score)
+# Shows whether the price–reviews relationship differs by review sentiment
 ggplot(d.merged, aes(x = number_of_reviews, y = log(price))) +
   geom_point(alpha = 0.2) +
   geom_smooth(method = "lm", se = FALSE) +
-  facet_wrap(~ factor(bing_score)) +
+  facet_wrap(~ factor(bing_score)) +     # One panel per sentiment category
   theme_minimal()
 
 ```
+
 The plots show a weak negative relationship between the number of reviews and log price: listings with more reviews tend to be slightly cheaper on average, although the effect appears small.
 
 This pattern is broadly similar across room types and sentiment categories. Overall, review volume does not seem to be a strong visual driver of price, which motivates a formal regression analysis to quantify the effect.
@@ -1217,12 +1279,12 @@ if (file.exists("../Models/lm_model.rds")) {
   lm_model <- readRDS("../Models/lm_model.rds")
 } else {
   
-# log
+  # Prepare model data: create log(price) and set reference categories for factors
   d.model <- d.listings_with_sentiment %>%
     mutate(
-      log_price = log(price),
-      room_type = relevel(room_type, ref = "Entire home/apt"),
-      neighbourhood = relevel(neighbourhood, ref = "City")
+      log_price = log(price),                                  # log-transform price for modeling
+      room_type = relevel(room_type, ref = "Entire home/apt"), # baseline room type for comparisons
+      neighbourhood = relevel(neighbourhood, ref = "City")     # baseline neighbourhood for comparisons
     )
   
 # Fit linear model
@@ -1238,21 +1300,23 @@ lm_model <- lm(log_price ~ room_type +
   saveRDS(lm_model,"../Models/lm_model.rds")
 }
 
-# Key coefficients
+# Show the main regression results
 summary(lm_model)
 
-# exp to be easier to interpret
+# Exponent for easier interpretation
 round((exp(coef(lm_model)) - 1) * 100, 1)
+
 ```
 ```{r linear_model_table}
 
+# Turn model coefficients into a clean table and convert log-coefficients to % effects on price
 effects <- broom::tidy(lm_model) %>%
-  filter(term != "(Intercept)") %>%
+  filter(term != "(Intercept)") %>% # Drop the intercept (not directly interpretable as an effect here)
   mutate(
-    pct_effect = 100 * (exp(estimate) - 1),
-    pct_effect = round(pct_effect, 1)
+    pct_effect = 100 * (exp(estimate) - 1), # Approximate % change in price for a 1-unit change / vs reference
+    pct_effect = round(pct_effect, 1) # Round for readability
   ) %>%
-  arrange(desc(abs(pct_effect)))
+  arrange(desc(abs(pct_effect))) # Sort by largest effects (positive or negative)
 
 effects
 
@@ -1266,12 +1330,12 @@ effects_key
 top_neigh_plus  <- effects %>%
   filter(grepl("^neighbourhood", term)) %>%
   arrange(desc(pct_effect)) %>%
-  slice(1:8)
+  slice(1:8)  # Top 8 premiums
 
 top_neigh_minus <- effects %>%
   filter(grepl("^neighbourhood", term)) %>%
   arrange(pct_effect) %>%
-  slice(1:8)
+  slice(1:8)  # Top 8 discounts
 
 top_neigh_plus
 top_neigh_minus
@@ -1294,30 +1358,25 @@ We compare the original linear model (LM) with a polynomial version that include
 
 ```{r cross_validation,include=FALSE}
 
+# Make CV results reproducible
 set.seed(123)
 
-# ------------------------------------------------------------
-# 1) Prepare modeling data
-# ------------------------------------------------------------
+# Prepare modeling data
 d.model <- d.listings_with_sentiment %>%
-  filter(price > 0) %>%
+  filter(price > 0) %>% # log() requires positive values
   mutate(
     log_price = log(price),
-    room_type = relevel(factor(room_type), ref = "Entire home/apt"),
-    neighbourhood = relevel(factor(neighbourhood), ref = "City")
+    room_type = relevel(factor(room_type), ref = "Entire home/apt"), # reference level for room_type
+    neighbourhood = relevel(factor(neighbourhood), ref = "City") # reference level for neighbourhood
   )
 
-# ------------------------------------------------------------
-# 2) Cross-validation setup (5-fold CV)
-# ------------------------------------------------------------
+# Cross-validation setup (5-fold CV)
 cv_control <- trainControl(
   method = "cv",
   number = 5
 )
 
-# ------------------------------------------------------------
-# 3) Model 1: Original Linear Model (with saving)
-# ------------------------------------------------------------
+# Model 1: Original Linear Model (with saving)
 if (file.exists("../Models/cv_lm_price.rds")) {
   cv_lm <- readRDS("../Models/cv_lm_price.rds")
 } else {
@@ -1329,26 +1388,24 @@ if (file.exists("../Models/cv_lm_price.rds")) {
     data = d.model,
     method = "lm",
     trControl = cv_control,
-    metric = "RMSE",
-    na.action = na.omit
+    metric = "RMSE", 
+    na.action = na.omit # drop rows with missing values in any model variable
   )
   
   saveRDS(cv_lm, "../Models/cv_lm_price.rds")
 }
 
-# ------------------------------------------------------------
-# 4) Model 2: Polynomial Linear Model (with saving)
-# ------------------------------------------------------------
+# Model 2: Polynomial Linear Model (with saving)
 if (file.exists("../Models/cv_poly_price.rds")) {
   cv_poly <- readRDS("../Models/cv_poly_price.rds")
 } else {
   cv_poly <- train(
     log_price ~ room_type + neighbourhood +
-      mean_bing_score + I(mean_bing_score^2) +
-      number_of_reviews + I(number_of_reviews^2) +
+      mean_bing_score + I(mean_bing_score^2) + # allow non-linear effect of sentiment
+      number_of_reviews + I(number_of_reviews^2) + # allow non-linear effect of reviews
       calculated_host_listings_count +
-      minimum_nights + I(minimum_nights^2) +
-      availability_365 + I(availability_365^2),
+      minimum_nights + I(minimum_nights^2) + # allow non-linear effect of min nights
+      availability_365 + I(availability_365^2), # allow non-linear effect of availability
     data = d.model,
     method = "lm",
     trControl = cv_control,
@@ -1359,23 +1416,21 @@ if (file.exists("../Models/cv_poly_price.rds")) {
   saveRDS(cv_poly, "../Models/cv_poly_price.rds")
 }
 
-# ------------------------------------------------------------
-# 5) Compare numerical results
-# ------------------------------------------------------------
+# Print results
 cv_lm$results
 cv_poly$results
 
-# ------------------------------------------------------------
-# 6) Visual comparison across folds
-# ------------------------------------------------------------
+# Visual comparison across folds
 res <- resamples(list(LM = cv_lm, Polynomial = cv_poly))
 
 summary(res)
 
 ```
 ```{r boxplot_cross_validation}
+
 bwplot(res, metric = "RMSE")     # lower = better
 bwplot(res, metric = "Rsquared") # higher = better
+
 ```
 
 In the first plot (RMSE), lower values indicate better predictive performance. The linear model has a slightly lower average RMSE than the polynomial model. This means that, when predicting unseen data, the linear model produces slightly smaller prediction errors.
