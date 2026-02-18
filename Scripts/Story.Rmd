@@ -116,7 +116,7 @@ We convert the variables room_type, neighbourhood, and neighbourhood_group to fa
 
 The variables id and host_id are converted to character because they serve as unique identifiers and do not carry numerical meaning.
 
-**Missing Data** After converting the required types, the amount of missing data is examined by - calculating the absolute number of missing values in each column - visualizing the proportion of missing values relative to the total number of observations - visualizing the missing patterns to understand if missing data is systematic
+**Missing Data** After converting the required types, the amount of missing data is examined by - calculating the absolute number of missing values in each column - visualizing the proportion of missing values relative to the total number of observations - visualizing the missing patterns to understand if missing data is systematic.
 
 This provides an overview of data completeness and helps identify variables that may require cleaning or removal.
 
