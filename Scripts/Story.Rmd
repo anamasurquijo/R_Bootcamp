@@ -1237,7 +1237,7 @@ lm_model <- lm(log_price ~ room_type +
                            availability_365,
              data = d.model)
   # Save model
-  saveRDS(lm_model, "lm_model.rds")
+  saveRDS(lm_model,"../Models/lm_model.rds")
 }
 
 # Key coefficients
