@@ -374,6 +374,7 @@ d.merged <- d.merged %>%
 glimpse(d.merged)
 
 ```
+
 While we have now the bing_score per comment, it will be interesting to have also a final dataset that shows the mean bing_score per airbnb and the number of reviews, in order to kind of create a mean rating of each of the airbnbs and also see if this is trustworthy depending on the number of reviews (if just one review, it is not that representative).
 
 ```{r meanumber_of_reviews_airbnb}
@@ -483,10 +484,14 @@ num_summary <- d.merged %>%
 num_summary
 
 ```
+
 Furthermore, some boxplots are visualized to show the distrubution these variables are following.
 
 ```{r boxplot_statistics}
 
+# Prepare data for boxplots:
+# Keep one row per id, select relevant numeric variables,
+# and reshape to long format for plotting
 boxplot_data <- d.merged %>%
   distinct(id, .keep_all = TRUE) %>%
   select(
@@ -499,6 +504,8 @@ boxplot_data <- d.merged %>%
     values_to = "value"
   )
 
+# Create faceted boxplots to show the distribution
+# of each numeric variable separately
 ggplot(boxplot_data, aes(x = "", y = value)) +
   geom_boxplot(
     fill  = "#4292c6",
@@ -531,7 +538,6 @@ Minimum nights is generally low (median = 2), but extreme values exist, reflecti
 The sentiment score is strongly concentrated at positive values (median = 1), confirming that most reviews are favorable.
 
 Although several variables exhibit extreme values, these appear economically plausible and are therefore retained in the analysis.
-
 
 ## Correlation Analysis and multicollinearity
 
