@@ -191,8 +191,6 @@ While we will replace the missing values of reviews per month variables with zer
 
 Finally, the listings dataset is checked for duplicate listing identifiers. This is done by counting how often each id appears, filtering for those that occur more than once, and displaying only the distinct duplicated entries. This step verifies whether the primary key in the listings data is unique, which is important for reliable joins and further analysis.
 
-There are no duplicate listing identifiers.
-
 ```{r listings_missing, include=FALSE}
 # Remove column 'license' (contains only missing values)
 d.listings <- d.listings %>% 
@@ -212,6 +210,7 @@ d.listings %>%
 
 ```
 
+There are no duplicate listing identifiers.
 Now let us import and inspect the reviews.csv.
 
 ```{r importing_reviews}
