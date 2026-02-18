@@ -171,7 +171,7 @@ d.listings %>%
     -row_id,
     names_to = "variable",
     values_to = "value",
-    values_transform = list(value = as.character)   # 🔥 fix here
+    values_transform = list(value = as.character)   # fix here
   ) %>%
   mutate(is_missing = is.na(value)) %>%
   ggplot(aes(x = variable, y = row_id, fill = is_missing)) +
@@ -187,7 +187,7 @@ d.listings %>%
 
 The visualization clearly shows, that the missing price observations are mostly not the same airbnbs as the ones that did not have reviews.
 
-While we will replace the missing values of reviews per month variables with zero, we will delete all the airbnbs with price 0, as throughout the analysis, the price is one of the most important aspects and furthermore the fact of not having a price probably means that the airbnb was actually either not available or not on rent at the moment. The last_review variable is intentionally left unchanged, as imputing a date where none exists would not be meaningful.
+While we will replace the missing values of reviews per month variables with zero, we will delete all the airbnbs with price 0, as throughout the analysis, the price is one of the most important aspects and furthermore the fact of not having a price probably means that the airbnb was actually either not available, not on rent at the moment or the web scraper was not able to scrape the price. The last_review variable is intentionally left unchanged, as imputing a date where none exists would not be meaningful.
 
 Finally, the listings dataset is checked for duplicate listing identifiers. This is done by counting how often each id appears, filtering for those that occur more than once, and displaying only the distinct duplicated entries. This step verifies whether the primary key in the listings data is unique, which is important for reliable joins and further analysis.
 
