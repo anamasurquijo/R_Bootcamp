@@ -1619,7 +1619,7 @@ Since we used GenAI selectively and always provided clear context and our own pr
 
 ## Interactive map with all listings
 
-```{r interactive_map_listings}
+```{r interactive_map_listings, include=FALSE}
 
 airbnb_listings <- d.merged %>%
   distinct(id, .keep_all = TRUE)
