@@ -1209,8 +1209,8 @@ for (g in radar_scaled$neighbourhood_group) {
 
 ```
 
-As an overall insights:
-- The numbers of listings and hosts tend to move together meaning groups with many listings also usually have many hosts. This may indicate active Airbnb markets instead of a few large-scale hosts.Mean price varies more stronlgy than mean minimum nights. Generally, the minimum nights stay moderate across the city. Each group has a different profile suggesting no uniform market.
+As an overall insight:
+The numbers of listings and hosts tend to move together meaning groups with many listings also usually have many hosts. This may indicate active Airbnb markets instead of a few large-scale hosts.Mean price varies more stronlgy than mean minimum nights. Generally, the minimum nights stay moderate across the city. Each group has a different profile suggesting no uniform market.
 
 While we will not go into details of all neighbourhood groups, we will highlight some of them.
 
