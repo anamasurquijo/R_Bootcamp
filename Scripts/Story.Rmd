@@ -682,7 +682,7 @@ ggplot(
     guide = "none"
   ) +
   labs(
-    title = "Room types (Listings)",
+    title = "Count of Listings per Room Type",
     x = "Number of listings",
     y = "Room Type"
   ) +
