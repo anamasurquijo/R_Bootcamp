@@ -428,10 +428,6 @@ glimpse(d.listings_with_sentiment)
 
 ```
 
-**Limitations** The sentiment analysis is based on a simple binary lexicon and ignores context, word order, and negations. Therefore, phrases like “not bad” or “not dirty” may be incorrectly classified as negative. Sarcasm and nuanced language are also not captured.
-
-In addition, only English comments were analyzed, which reduces the sample size and may introduce selection bias. The final score (−1, 0, 1) is a simplified measure and does not fully reflect the complexity of review tone.
-
 This d.merged dataset and also the d.listings_with_sentiment dataset, where the average "rating" per Airbnb is included, provide a solid basis for the analysis. The next chapter dives into the data's characteristics, patterns and trends.
 
 ## Summary Statistics of data
