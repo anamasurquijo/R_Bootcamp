@@ -734,7 +734,7 @@ ggplot(listings_per_host, aes(x = listings_group)) +
 
 The distribution of listings per host is highly right-skewed. The median host operates a single listing, while the mean of 2.23 listings per host reflects the presence of a smaller group of multi-listing hosts. This indicates that the Airbnb market is primarily composed of individual hosts, although a minority of more professional hosts contributes disproportionately to total supply. 
 
-### Distribution of minimum nights - For how long do guest usually stay?
+### Distribution of minimum nights - For how long do guests usually stay?
 
 The histogram illustrates the distribution of minimum stay requirements for Airbnb listings across Zurich. The analysis is based on listing-level data and focuses on values between 1 and 35 nights.
 
