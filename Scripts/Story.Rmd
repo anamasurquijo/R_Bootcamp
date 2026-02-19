@@ -27,23 +27,25 @@ opts_chunk$set(
 ```
 
 ```{r load libraries, include = FALSE}
-library(R.utils)
-library(readr)
-library(dplyr)
-library(tidyr)
-library(cld3)
-library(ggplot2)
-library(scales)
-library(fmsb)
-library(leaflet)
-library(sf)
-library(patchwork)
-library(lubridate)
-library(tidytext)
-library(textdata)
-library(corrplot)
-library(osmdata)
-library(caret)
+
+# Vector of required packages
+packages <- c(
+  "R.utils", "readr", "dplyr", "tidyr", "cld3",
+  "ggplot2", "scales", "fmsb", "leaflet", "sf",
+  "patchwork", "lubridate", "tidytext", "textdata",
+  "corrplot", "osmdata", "caret"
+)
+
+# Install missing packages
+installed <- packages %in% rownames(installed.packages())
+
+if (any(!installed)) {
+  install.packages(packages[!installed])
+}
+
+# Load all packages
+invisible(lapply(packages, library, character.only = TRUE))
+
 ```
 
 # Introduction
