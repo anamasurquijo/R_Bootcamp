@@ -1027,7 +1027,7 @@ The figure shows a strong upward trend in the number of Airbnb listings in Zuric
 ## Evolution of reviews
 **How happy are guests with Airbnbs and how have the ratings evolved over time?**
 
-Not only the Airbnb listings, also the reviews
+Not only the Airbnb listings, also the reviews evolution is important to analyze, in order to see how happy guests are and if this is improving or getting worse.
 
 ```{r reviews_evolution}
 
@@ -1043,9 +1043,11 @@ ggplot(reviews_year,
        aes(x = year, y = number_of_reviews, fill = factor(bing_score))) +
   geom_area() +                    # Stacked area chart
   scale_fill_manual(               # Manually assign colors to sentiments
-    values = c("-1" = "red",
-               "0"  = "yellow",
-               "1"  = "green")
+    values = c(
+      "-1" = "#C44E52",  # muted red
+      "0"  = "#DDCC77",  # soft mustard yellow
+      "1"  = "#55A868"   # muted green
+    )
   ) +
   labs(
     title = "Evolution of Reviews Over Time",
@@ -1055,7 +1057,6 @@ ggplot(reviews_year,
   theme(
     plot.title = element_text(hjust = 0.5, face = "bold", size = 14)
   )
-
 ```
 
 The figure shows a strong increase in the total number of Airbnb reviews over time, closely mirroring the growth in listings. Reviews rise steadily until 2019, decline sharply around 2020—likely due to the COVID-19 pandemic—and then increase rapidly again from 2021 onward.
@@ -1145,7 +1146,7 @@ p_count + p_share +
 
 According to the left map, on first view one might believe that the city center receives by far the most negative reviews. But the city center is also the place with the most amount of stays and therefore the most reviews. Thus the proportion of negative reviews must be taken into account, which displays a more nuanced picture.
 
-The city center is still one of the neighbourhoods with the highest percentage of negative reviews. Yet, there are much more neighbourhoods with a percentage above 2% and the neighbourhood *Friesenberg* even has a higher percentage than the city center.
+The city center is still one of the neighbourhoods with the highest percentage of negative reviews. Yet, there are much more neighbourhoods with a percentage above 2% and the neighbourhood Friesenberg even has a higher percentage than the city center.
 
 Overall, the share of negative reviews is much more informative than the absolute number. Although there is spatial variation in the share of negative reviews, the absolute levels are low, with no neighbourhood exceeding approximately 2.5% negative feedback, suggesting generally high guest satisfaction citywide.
 
@@ -1289,11 +1290,9 @@ mtext(
 
 ```
 
-As an overall insight: The numbers of listings and hosts tend to move together meaning groups with many listings also usually have many hosts. This may indicate active Airbnb markets instead of a few large-scale hosts.Mean price varies more stronlgy than mean minimum nights. Generally, the minimum nights stay moderate across the city. Each group has a different profile suggesting no uniform market.
-
 While we will not go into details of all neighbourhood groups, we will highlight some of them.
 
-Kreis 1, the Old Town, displays higher prices, a moderate number of listings and hosts and shorter minimum stays. This is propably because of its smaller size and likely driven by tourists and business travelers looking for a premium markert. Kreis 2 shows a similar profile.
+Kreis 1, the Old Town, displays higher prices, a moderate number of listings and hosts and shorter minimum stays. This is propably because of its smaller size and likely driven by tourists and business travelers looking for a premium market. Kreis 2 shows a similar profile.
 
 Some of the groups more far away from the city center like Kreis 12 display a very low interest from hosts to publish listings. Kreis 5 displays as similar pattern but with relatively high prices. Kreis 12 displays its more peripheral and residential character as its being the least active Airbnb area. Kreis 5 with its direction to Schlieren where a more industrial area lies, displays less space for Airbnbs.
 
