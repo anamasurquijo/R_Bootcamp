@@ -895,8 +895,8 @@ To better understand Airbnb’s role within Zurich’s overall accommodation lan
 ```{r hotels_neighbourhood}
 # Check if hotels data already exists
 # Otherwise, download it from OpenStreetMap and save it for future use
-if (file.exists("../Data/osm_hotels_zurich.rds")) {
-  osm_hotels <- readRDS("../Data/osm_hotels_zurich.rds")
+if (file.exists("Data/osm_hotels_zurich.rds")) {
+  osm_hotels <- readRDS("Data/osm_hotels_zurich.rds")
 } else {
   
   # Get hotels from OpenStreetMap
@@ -905,7 +905,7 @@ if (file.exists("../Data/osm_hotels_zurich.rds")) {
     osmdata_sf()
   
   # Save hotels data
-  saveRDS(osm_hotels, "../Data/osm_hotels_zurich.rds")
+  saveRDS(osm_hotels, "Data/osm_hotels_zurich.rds")
 }
 
 # Keep hotel polygons and convert each polygon to 1 point
@@ -1270,8 +1270,8 @@ To formally assess which factors drive Airbnb prices in Zurich, we estimate a li
 ```{r linear_model, include=FALSE}
 
 # Check if model already exists
-if (file.exists("../Models/lm_model.rds")) {
-  lm_model <- readRDS("../Models/lm_model.rds")
+if (file.exists("Models/lm_model.rds")) {
+  lm_model <- readRDS("Models/lm_model.rds")
 } else {
   
   # Prepare model data: create log(price) and set reference categories for factors
@@ -1292,7 +1292,7 @@ lm_model <- lm(log_price ~ room_type +
                            availability_365,
              data = d.model)
   # Save model
-  saveRDS(lm_model,"../Models/lm_model.rds")
+  saveRDS(lm_model,"Models/lm_model.rds")
 }
 
 # Show the main regression results
@@ -1372,8 +1372,8 @@ cv_control <- trainControl(
 )
 
 # Model 1: Original Linear Model (with saving)
-if (file.exists("../Models/cv_lm_price.rds")) {
-  cv_lm <- readRDS("../Models/cv_lm_price.rds")
+if (file.exists("Models/cv_lm_price.rds")) {
+  cv_lm <- readRDS("Models/cv_lm_price.rds")
 } else {
   cv_lm <- train(
     log_price ~ room_type + neighbourhood +
@@ -1387,12 +1387,12 @@ if (file.exists("../Models/cv_lm_price.rds")) {
     na.action = na.omit # drop rows with missing values in any model variable
   )
   
-  saveRDS(cv_lm, "../Models/cv_lm_price.rds")
+  saveRDS(cv_lm, "Models/cv_lm_price.rds")
 }
 
 # Model 2: Polynomial Linear Model (with saving)
-if (file.exists("../Models/cv_poly_price.rds")) {
-  cv_poly <- readRDS("../Models/cv_poly_price.rds")
+if (file.exists("Models/cv_poly_price.rds")) {
+  cv_poly <- readRDS("Models/cv_poly_price.rds")
 } else {
   cv_poly <- train(
     log_price ~ room_type + neighbourhood +
@@ -1408,7 +1408,7 @@ if (file.exists("../Models/cv_poly_price.rds")) {
     na.action = na.omit
   )
   
-  saveRDS(cv_poly, "../Models/cv_poly_price.rds")
+  saveRDS(cv_poly, "Models/cv_poly_price.rds")
 }
 
 # Print results
