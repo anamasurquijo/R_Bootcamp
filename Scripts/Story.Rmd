@@ -336,7 +336,6 @@ glimpse(unmatched)
 # rename different review columns
 d.merged <- d.merged %>% 
   rename(review_id = id.y, review_date = date)
-glimpse(d.merged)
 
 ```
 
