@@ -1296,11 +1296,11 @@ Kreis 3 and 4 with the popular neighbourhood's have profiles with the most hosts
 
 # Model - Prediction of price - Which factors significantly determine Airbnb prices in Zurich?
 
-## Review vs Prices
+## Review vs Prices - Do Airbnbs with more positive reviews tend to have higher prices?
 
-Prior to estimating the linear model, we conduct a visual inspection of the relationship between review activity and prices. The plots below examine whether listings with more reviews tend to command different prices and whether this pattern varies by room type or sentiment score.
+The figure shows the relationship between the number of reviews and log price, separated by review sentiment categories: negative (−1), neutral (0), and positive (1). Across all three groups, the relationship appears slightly negative, meaning that listings with more reviews tend to be marginally cheaper on average. One of the reasons could be, that probably cheaper places are rented more often, are easier to give away.
 
-```{r facetting}
+```{r reviews_price, include=FALSE}
 
 # Scatterplot of number of reviews vs log(price), excluding zero prices
 # Adds a linear regression line to show the overall trend
@@ -1334,6 +1334,9 @@ ggplot(d.merged, aes(x = number_of_reviews, y = log(price))) +
       size  = 14
     )
   )
+```
+
+```{r reviews_price_facetting}
 
 # Same relationship, but split by sentiment category (bing_score)
 # Shows whether the price–reviews relationship differs by review sentiment
@@ -1356,16 +1359,13 @@ ggplot(d.merged, aes(x = number_of_reviews, y = log(price))) +
   )
 
 ```
+While listings with positive sentiment generally exhibit somewhat higher overall price levels compared to neutral or negative listings, the slope of the relationship between review volume and price remains relatively similar across all sentiment categories. Overall, the number of reviews does not appear to be a strong visual driver of price differences.
 
-The plots show a weak negative relationship between the number of reviews and log price: listings with more reviews tend to be slightly cheaper on average, although the effect appears small.
+## Linear Model - Which factors significantly determine Airbnb prices in Zurich?
 
-This pattern is broadly similar across room types and sentiment categories. Overall, review volume does not seem to be a strong visual driver of price, which motivates a formal regression analysis to quantify the effect.
+To formally assess which factors drive Airbnb prices in Zurich, we estimate a linear regression model using log(price) as the dependent variable. For the room type we have taken entire homes/ apartments and for neighbourhood the basis is the "City" neighbourhood.
 
-## Linear Model
-
-To formally assess which factors drive Airbnb prices in Zurich, we estimate a linear regression model using log(price) as the dependent variable.
-
-```{r linear_model, include=FALSE}
+```{r linear_model,include=FALSE}
 
 # Check if model already exists
 if (file.exists("../Models/lm_model.rds")) {
@@ -1400,7 +1400,15 @@ summary(lm_model)
 round((exp(coef(lm_model)) - 1) * 100, 1)
 
 ```
-```{r linear_model_table}
+
+
+```{r linear_coef}
+# Exponent for easier interpretation
+round((exp(coef(lm_model)) - 1) * 100, 1)
+
+```
+
+```{r linear_model_table, include=FALSE}
 
 # Turn model coefficients into a clean table and convert log-coefficients to % effects on price
 effects <- broom::tidy(lm_model) %>%
