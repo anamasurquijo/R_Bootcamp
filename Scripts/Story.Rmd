@@ -1447,7 +1447,9 @@ Overall, room type, neighbourhood, and sentiment emerge as the main determinants
 
 We additionally evaluate the predictive performance of the models using 5-fold cross-validation. This step is different from the previous regression analysis: while the original linear model was estimated on the full dataset to interpret relationships and coefficients, cross-validation assesses how well the models perform on unseen data. In each fold, the model is trained on part of the data and tested on observations that were not used for estimation.
 
-We compare the original linear model (LM) with a polynomial version that includes nonlinear terms.
+This way, the city of Zurich will be able to be sure, what the best model would be to predict the evolution of airbnb prices, which might be very useful.
+
+In this case, we compare the original linear model (LM) with a polynomial version that includes nonlinear terms.
 
 ```{r cross_validation,include=FALSE}
 
@@ -1519,6 +1521,7 @@ res <- resamples(list(LM = cv_lm, Polynomial = cv_poly))
 summary(res)
 
 ```
+
 ```{r boxplot_cross_validation}
 
 bwplot(
@@ -1545,13 +1548,13 @@ bwplot(
 
 ```
 
-In the first plot (RMSE), lower values indicate better predictive performance. The linear model has a slightly lower average RMSE than the polynomial model. This means that, when predicting unseen data, the linear model produces slightly smaller prediction errors.
+In the first plot (RMSE), lower values indicate better predictive performance. The linear model has a slightly lower average RMSE than the polynomial model. This means that, when predicting unseen data, the linear model produces slightly smaller prediction errors in the prices.
 
 In the second plot (R²), higher values indicate better explanatory power in the test folds. Again, the linear model shows a slightly higher average R² than the polynomial model. Thus, it explains slightly more of the variation in log prices in out-of-sample predictions.
 
 The boxplots display the distribution of performance across the five folds. Both models perform relatively similarly, but the polynomial model shows somewhat more variability and does not deliver any consistent improvement.
 
-Overall, there is no evidence that adding polynomial (nonlinear) terms improves predictive accuracy for unseen data. The simpler linear model performs at least as well — and slightly better — while being more stable and easier to interpret. Therefore, the linear model is preferred.
+Overall, there is no evidence that adding polynomial (nonlinear) terms improves predictive accuracy for unseen data. The simpler linear model performs at least as well — and slightly better — while being more stable and easier to interpret. Therefore, we can recommend the City of Zurich the linear model to predict the prices of Airbnbs in Zurich.
 
 # Conclusions
 
@@ -1573,13 +1576,13 @@ For the City of Zurich, this implies that broad, city-wide regulation may be les
 
 # Potential Limitations
 
-Static pricing information: The dataset contains only one price per listing, although Airbnb prices are dynamic and may vary over time depending on demand, seasonality, and availability. Therefore, the observed price may not fully reflect actual pricing strategies throughout the year.
+-   **Static pricing information**: The dataset contains only one price per listing, although Airbnb prices are dynamic and may vary over time depending on demand, seasonality, and availability. Therefore, the observed price may not fully reflect actual pricing strategies throughout the year.
 
-Limited property characteristics: The dataset does not provide detailed information on property size, number of rooms, number of beds, capacity (number of guests), or number of bathrooms. These factors are likely important determinants of price and may lead to omitted variable bias in the regression analysis.
+-   **Limited property characteristics**: The dataset does not provide detailed information on property size, number of rooms, number of beds, capacity (number of guests), or number of bathrooms. These factors are likely important determinants of price and may lead to omitted variable bias in the regression analysis.
 
-Simplified sentiment analysis: Sentiment was measured using a basic lexicon-based approach (Bing dictionary). This method does not account for context, negation, or sarcasm. For example, phrases such as “not good” may be incorrectly classified as positive due to the presence of the word “good,” ignoring the negation.
+-   **Simplified sentiment analysis**: Sentiment was measured using a basic lexicon-based approach (Bing dictionary). This method does not account for context, negation, or sarcasm. For example, phrases such as “not good” may be incorrectly classified as positive due to the presence of the word “good,” ignoring the negation.
 
-Exclusion of non-English reviews: Non-English comments were removed prior to sentiment analysis. As a result, reviews written in German, Swiss German, or other languages are not included, which may bias the sentiment measure and limit representativeness.
+-   **Exclusion of non-English reviews**: Non-English comments were removed prior to sentiment analysis. As a result, reviews written in German, Swiss German, or other languages are not included, which may bias the sentiment measure and limit representativeness.
 
 # Use of GenAI
 
