@@ -323,14 +323,15 @@ d.merged %>%
 
 ```
 
-To further investigate unmatched cases, an anti-join is performed between the listings and reviews datasets. This operation returns only those listings that do not have a matching review. The result is inspected manually using the View() function, allowing a detailed examination of all columns. This inspection confirms that the unmatched entries correspond to listings without any reviews, which explains the absence of a matching listing_id in the reviews data, particularly given that the last_review field contains only missing values for these cases.
+To further investigate unmatched cases, an anti-join is performed between the listings and reviews datasets. This operation returns only those listings that do not have a matching review. The result was inspected manually using the View() function, allowing a detailed examination of all columns. However, for sake of brevity, only the first few values are displayed. This inspection confirms that the unmatched entries correspond to listings without any reviews, which explains the absence of a matching listing_id in the reviews data, particularly given that the last_review field contains only missing values for these cases.
 
 Finally, to improve clarity and avoid ambiguity in the merged dataset, review-related columns are renamed. The review identifier column originating from the reviews table is renamed to review_id, and the review date column is renamed to review_date, making the structure and meaning of the merged data clearer for subsequent analysis.
 
 ```{r rename,class.source = "fold-show"}
 
 # anti_join to inspect any mismatches
-anti_join(d.listings, d.reviews, by = c("id" = "listing_id"))
+unmatched <- anti_join(d.listings, d.reviews, by = c("id" = "listing_id"))
+glimpse(unmatched)
 
 # rename different review columns
 d.merged <- d.merged %>% 
