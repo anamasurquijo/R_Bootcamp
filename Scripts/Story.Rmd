@@ -859,10 +859,17 @@ radius_scaled <- rescale(pts_df$mean_minimum_nights, to = c(4, 16))
 # Interactive leaflet map with neighbourhood borders and bubbles
 leaflet(geo_min_4326) %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik) %>%
+
+  addControl(
+      html = "<h3 style='margin:5px; font-weight:bold;'>
+              Mean Minimum Nights by Neighbourhood
+              </h3>",
+      position = "topright"
+    ) %>%
   
   # Neighbourhood outlines 
   addPolygons(
-    color         = "#444444",     # border colour
+    color         = "#444444",   # border colour
     weight        = 1.2,           # thickness of line
     opacity       = 0.9,
     fill          = FALSE,         # just outlines
@@ -880,7 +887,7 @@ leaflet(geo_min_4326) %>%
     lng         = ~lon,
     lat         = ~lat,
     radius      = radius_scaled,
-    color       = "#ffffff",   # White border around bubbles
+    color       = "#ffffff",     # White border around bubbles
     weight      = 1,
     fillColor   = ~pal(mean_minimum_nights), # Fill color based on mean minimum nights
     fillOpacity = 0.85,
@@ -940,6 +947,21 @@ airbnb_2025 <- d.merged %>%
 # Simple interactive map with neighbourhoods and hotels
 leaflet() %>%
   addTiles() %>% # Base map
+
+  addControl(
+      html = "
+        <div style='text-align:center; width:100%;'>
+          <h3 style='margin:8px; font-weight:bold;'>
+            Airbnbs and Hotels per Neighbourhood (2025)
+          </h3>
+          <div style='font-size:13px;'>
+            Spatial comparison of traditional hotels and Airbnb listings
+          </div>
+        </div>
+      ",
+      position = "topright"
+    ) %>%
+
   # Add neighbourhood boundaries
   addPolygons(
     data = geojson,
@@ -1503,8 +1525,27 @@ summary(res)
 ```
 ```{r boxplot_cross_validation}
 
-bwplot(res, metric = "RMSE")     # lower = better
-bwplot(res, metric = "Rsquared") # higher = better
+bwplot(
+  res,
+  metric = "RMSE",
+  main = list(
+    label = "Cross-Validation Comparison (RMSE)",
+    cex = 1.2,
+    font = 2,
+    just = c(0.5, 0.5) # Centering 
+  )
+)
+
+bwplot(
+  res,
+  metric = "Rsquared",
+  main = list(
+    label = "Cross-Validation Comparison (R-squared)",
+    cex = 1.2,
+    font = 2,
+    just = c(0.5, 0.5)
+  )
+)
 
 ```
 
