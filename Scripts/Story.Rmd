@@ -100,13 +100,13 @@ The two datasets are merged using the unique listing identifier. This combined d
 
 ```{r unpacking, eval=FALSE}
 library(R.utils)
-gunzip("../Data/reviews.csv.gz")
+gunzip("Data/reviews.csv.gz")
 ```
 
 First, the listings and reviews datasets are imported from CSV files using read_csv and stored as d.listings and d.reviews. Let us import the csvs and get an overview of how the datasets look like to get a first impression. For this we start importing and using the glimpse function of the dplyr package as the head and str functions of base R do not make it that clean.
 
 ```{r importing_listings}
-d.listings <- read_csv("../Data/listings.csv")
+d.listings <- read_csv("Data/listings.csv")
 glimpse(d.listings)
 ```
 
@@ -221,7 +221,7 @@ There are no duplicate listing identifiers.
 Now let us import and inspect the reviews.csv.
 
 ```{r importing_reviews}
-d.reviews <- read_csv("../Data/reviews.csv")
+d.reviews <- read_csv("Data/reviews.csv")
 glimpse(d.reviews)
 
 ```
