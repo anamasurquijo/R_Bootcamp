@@ -102,13 +102,13 @@ The two datasets are merged using the unique listing identifier. This combined d
 
 ```{r unpacking, eval=FALSE}
 library(R.utils)
-gunzip("Data/reviews.csv.gz")
+gunzip("../Data/reviews.csv.gz")
 ```
 
 First, the listings and reviews datasets are imported from CSV files using read_csv and stored as d.listings and d.reviews. Let us import the csvs and get an overview of how the datasets look like to get a first impression. For this we start importing and using the glimpse function of the dplyr package as the head and str functions of base R do not make it that clean.
 
 ```{r importing_listings}
-d.listings <- read_csv("Data/listings.csv")
+d.listings <- read_csv("../Data/listings.csv")
 glimpse(d.listings)
 ```
 
@@ -242,7 +242,7 @@ There are no duplicate listing identifiers.
 Now let us import and inspect the reviews.csv.
 
 ```{r importing_reviews}
-d.reviews <- read_csv("Data/reviews.csv")
+d.reviews <- read_csv("../Data/reviews.csv")
 glimpse(d.reviews)
 
 ```
@@ -812,7 +812,7 @@ Overall, the distribution reveals a dominant short-term rental segment character
 The visual below deepens our knowledge of the previous insights regarding minimum nights per stay. It displays the mean minimum nights of all listings per neighbourhood as a bubble map. The bigger the bubble the higher the minimum nights mean value.
 
 ```{r import_neighbourhoods, include=FALSE}
-geojson <- st_read("Data/neighbourhoods.geojson")
+geojson <- st_read("../Data/neighbourhoods.geojson")
 ```
 
 ```{r minimum_nights_neighbourhood}
@@ -918,8 +918,8 @@ To better understand Airbnb’s role within Zurich’s overall accommodation lan
 
 # Check if hotels data already exists
 # Otherwise, download it from OpenStreetMap and save it for future use
-if (file.exists("Data/osm_hotels_zurich.rds")) {
-  osm_hotels <- readRDS("Data/osm_hotels_zurich.rds")
+if (file.exists("../Data/osm_hotels_zurich.rds")) {
+  osm_hotels <- readRDS("../Data/osm_hotels_zurich.rds")
 } else {
   
   # Get hotels from OpenStreetMap
@@ -928,7 +928,7 @@ if (file.exists("Data/osm_hotels_zurich.rds")) {
     osmdata_sf()
   
   # Save hotels data
-  saveRDS(osm_hotels, "Data/osm_hotels_zurich.rds")
+  saveRDS(osm_hotels, "../Data/osm_hotels_zurich.rds")
 }
 
 # Keep hotel polygons and convert each polygon to 1 point
@@ -1368,16 +1368,16 @@ To formally assess which factors drive Airbnb prices in Zurich, we estimate a li
 ```{r linear_model, include=FALSE}
 
 # Check if model already exists
-if (file.exists("Models/lm_model.rds")) {
-  lm_model <- readRDS("Models/lm_model.rds")
+if (file.exists("../Models/lm_model.rds")) {
+  lm_model <- readRDS("../Models/lm_model.rds")
 } else {
   
   # Prepare model data: create log(price) and set reference categories for factors
   d.model <- d.listings_with_sentiment %>%
     mutate(
       log_price = log(price),                                  # log-transform price for modeling
-      room_type = relevel(room_type, ref = "Entire home/apt"), # baseline room type for comparisons
-      neighbourhood = relevel(neighbourhood, ref = "City")     # baseline neighbourhood for comparisons
+      room_type = relevel(room_type, ref = "Entire home/apt"), # baseline room type
+      neighbourhood = relevel(neighbourhood, ref = "City")     # baseline neighbourhood
     )
   
 # Fit linear model
@@ -1390,7 +1390,7 @@ lm_model <- lm(log_price ~ room_type +
                            availability_365,
              data = d.model)
   # Save model
-  saveRDS(lm_model,"Models/lm_model.rds")
+  saveRDS(lm_model,"../Models/lm_model.rds")
 }
 
 # Show the main regression results
@@ -1470,8 +1470,8 @@ cv_control <- trainControl(
 )
 
 # Model 1: Original Linear Model (with saving)
-if (file.exists("Models/cv_lm_price.rds")) {
-  cv_lm <- readRDS("Models/cv_lm_price.rds")
+if (file.exists("../Models/cv_lm_price.rds")) {
+  cv_lm <- readRDS("../Models/cv_lm_price.rds")
 } else {
   cv_lm <- train(
     log_price ~ room_type + neighbourhood +
@@ -1485,12 +1485,12 @@ if (file.exists("Models/cv_lm_price.rds")) {
     na.action = na.omit # drop rows with missing values in any model variable
   )
   
-  saveRDS(cv_lm, "Models/cv_lm_price.rds")
+  saveRDS(cv_lm, "../Models/cv_lm_price.rds")
 }
 
 # Model 2: Polynomial Linear Model (with saving)
-if (file.exists("Models/cv_poly_price.rds")) {
-  cv_poly <- readRDS("Models/cv_poly_price.rds")
+if (file.exists("../Models/cv_poly_price.rds")) {
+  cv_poly <- readRDS("../Models/cv_poly_price.rds")
 } else {
   cv_poly <- train(
     log_price ~ room_type + neighbourhood +
@@ -1506,7 +1506,7 @@ if (file.exists("Models/cv_poly_price.rds")) {
     na.action = na.omit
   )
   
-  saveRDS(cv_poly, "Models/cv_poly_price.rds")
+  saveRDS(cv_poly, "../Models/cv_poly_price.rds")
 }
 
 # Print results
@@ -1619,7 +1619,7 @@ Since we used GenAI selectively and always provided clear context and our own pr
 
 ## Interactive map with all listings
 
-```{r}
+```{r interactive_map_listings}
 
 airbnb_listings <- d.merged %>%
   distinct(id, .keep_all = TRUE)
