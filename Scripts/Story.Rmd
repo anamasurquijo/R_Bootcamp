@@ -238,8 +238,7 @@ d.listings %>%
 
 ```
 
-There are no duplicate listing identifiers.
-Now let us import and inspect the reviews.csv.
+There are no duplicate listing identifiers. Now let us import and inspect the reviews.csv.
 
 ```{r importing_reviews}
 d.reviews <- read_csv("../Data/reviews.csv")
@@ -433,7 +432,6 @@ This d.merged dataset and also the d.listings_with_sentiment dataset, where the 
 ## Summary Statistics of data
 
 To gain an initial understanding of the dataset, descriptive summary statistics are computed for all relevant numeric variables. These statistics provide an overview of central tendency (mean, median), dispersion (standard deviation), and distribution (minimum, quartiles, maximum), allowing us to better understand the structure and variability of the data before proceeding to more advanced analyses. We are excluding the numeric variables latitude, longitude, n_negative, n_positive as these are not meaningful for the descriptive statitsics.
-
 
 ```{r summary_statistics}
 
@@ -757,7 +755,7 @@ ggplot(listings_per_host, aes(x = listings_group)) +
 
 ```
 
-The distribution of listings per host is highly right-skewed. The median host operates a single listing, while the mean of 2.23 listings per host reflects the presence of a smaller group of multi-listing hosts. This indicates that the Airbnb market is primarily composed of individual hosts, although a minority of more professional hosts contributes disproportionately to total supply. 
+The distribution of listings per host is highly right-skewed. The median host operates a single listing, while the mean of 2.23 listings per host reflects the presence of a smaller group of multi-listing hosts. This indicates that the Airbnb market is primarily composed of individual hosts, although a minority of more professional hosts contributes disproportionately to total supply.
 
 ### Distribution of minimum nights - For how long do guests usually stay?
 
@@ -805,7 +803,6 @@ The distribution is strongly right-skewed. The vast majority of listings require
 The frequency declines rapidly up to around 7 minimum nights. Beyond that point, only a small number of listings require longer stays. Nevertheless, there are some visible spikes in the right tail — for example at 20 nights and, more notably, at 30 nights. The concentration at 30 nights may reflect strategic behaviour, such as aligning with monthly rental cycles or adapting to regulatory thresholds observed in other cities.
 
 Overall, the distribution reveals a dominant short-term rental segment characterised by very low minimum stay requirements, alongside a smaller but clearly present group of listings targeting longer stays.
-
 
 ### Minimum nights per neighbourhood map - Are there spatial differences?
 
@@ -908,7 +905,6 @@ Most neighbourhoods have relatively low mean minimum stays, typically between 1 
 Saatlen stands out with a notably higher average minimum stay. However, this neighbourhood has only a small number of listings, which likely drives this result and limits its broader interpretability.
 
 Overall, the map confirms that short-term rental intensity varies across Zurich, with central neighbourhoods appearing more strongly oriented toward very short stays.
-
 
 ## Airbnbs and hotels per neighbourhood 2025 - What areas are mostly covered by hotels and where do Airbnbs complement well?
 
@@ -1024,7 +1020,7 @@ The figure shows a strong upward trend in the number of Airbnb listings in Zuric
 
 ## Evolution of reviews - How happy are guests with Airbnbs and how have the ratings evolved over time?
 
-Not only the Airbnb listings, also the reviews 
+Not only the Airbnb listings, also the reviews
 
 ```{r reviews_evolution}
 
@@ -1283,8 +1279,7 @@ mtext(
 
 ```
 
-As an overall insight:
-The numbers of listings and hosts tend to move together meaning groups with many listings also usually have many hosts. This may indicate active Airbnb markets instead of a few large-scale hosts.Mean price varies more stronlgy than mean minimum nights. Generally, the minimum nights stay moderate across the city. Each group has a different profile suggesting no uniform market.
+As an overall insight: The numbers of listings and hosts tend to move together meaning groups with many listings also usually have many hosts. This may indicate active Airbnb markets instead of a few large-scale hosts.Mean price varies more stronlgy than mean minimum nights. Generally, the minimum nights stay moderate across the city. Each group has a different profile suggesting no uniform market.
 
 While we will not go into details of all neighbourhood groups, we will highlight some of them.
 
@@ -1359,6 +1354,7 @@ ggplot(d.merged, aes(x = number_of_reviews, y = log(price))) +
   )
 
 ```
+
 While listings with positive sentiment generally exhibit somewhat higher overall price levels compared to neutral or negative listings, the slope of the relationship between review volume and price remains relatively similar across all sentiment categories. Overall, the number of reviews does not appear to be a strong visual driver of price differences.
 
 ## Linear Model - Which factors significantly determine Airbnb prices in Zurich?
@@ -1400,7 +1396,6 @@ summary(lm_model)
 round((exp(coef(lm_model)) - 1) * 100, 1)
 
 ```
-
 
 ```{r linear_coef}
 # Exponent for easier interpretation
@@ -1596,7 +1591,7 @@ For the City of Zurich, this implies that broad, city-wide regulation may be les
 
 **What tools did we use?**
 
- We mainly used ChatGPT and Gemini.
+We mainly used ChatGPT and Gemini.
 
 **What have you used it for?**
 
@@ -1621,7 +1616,6 @@ We verified the correctness of GenAI outputs primarily by running the suggested 
 **What did not work?**
 
 Since we used GenAI selectively and always provided clear context and our own preliminary work, the tools generally worked well. We did not encounter major issues. However, we consistently evaluated the responses critically to ensure correctness and maintain academic integrity.
-
 
 # Appendix
 
