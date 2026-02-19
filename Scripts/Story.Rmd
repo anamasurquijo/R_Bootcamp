@@ -198,7 +198,7 @@ d.listings %>%
   labs(
     title = "Missing Data Pattern",
     x = NULL,
-    y = NULL,
+    y = "Listings",
     fill = "Missing"
   ) +
   theme_minimal() +
@@ -763,7 +763,7 @@ ggplot(listings_per_host, aes(x = listings_group)) +
 
 The distribution of listings per host is highly right-skewed. The median host operates a single listing, while the mean of 2.23 listings per host reflects the presence of a smaller group of multi-listing hosts. This indicates that the Airbnb market is primarily composed of individual hosts, although a minority of more professional hosts contributes disproportionately to total supply. 
 
-## Distribution of minimum nights - For how long do guests usually stay?
+### Distribution of minimum nights - For how long do guests usually stay?
 
 The histogram illustrates the distribution of minimum stay requirements for Airbnb listings across Zurich. The analysis is based on listing-level data and focuses on values between 1 and 35 nights.
 
@@ -828,7 +828,7 @@ print(n = 53, min_nights)
 
 ```
 
-### Minimum nights per neighbourhood map - Are there spatial differences for the minimum amount of nights?
+### Minimum nights per neighbourhood map - Are there spatial differences?
 
 The visual below deepens our knowledge of the previous insights regarding minimum nights per stay. It displays the mean minimum nights of all listings per neighbourhood as a bubble map. The bigger the bubble the higher the minimum nights mean value.
 
@@ -924,7 +924,7 @@ Saatlen stands out with a notably higher average minimum stay. However, this nei
 Overall, the map confirms that short-term rental intensity varies across Zurich, with central neighbourhoods appearing more strongly oriented toward very short stays.
 
 
-## Airbnbs and hotels per neighbourhood 2025 - In what areas of the city can Airbnb make a lot of sense due to low hotel offer?
+## Airbnbs and hotels per neighbourhood 2025 - What areas are mostly covered by hotels and where do Airbnbs complement well?
 
 To better understand Airbnb’s role within Zurich’s overall accommodation landscape, it is important to assess how its spatial distribution compares to that of traditional hotels. This helps clarify whether Airbnb primarily complements existing infrastructure or competes directly with it.
 
@@ -991,7 +991,7 @@ This spatial difference suggests a dual role. In peripheral areas with limited h
 
 For the City of Zurich, this spatial differentiation is particularly relevant. It enables a more targeted assessment of where Airbnb strengthens the accommodation offer and where it may increase tourism pressure or housing market strain, supporting evidence-based regulatory and urban planning decisions.
 
-## Evolution of number of Airbnb listings - Is Airbnb growing fast?
+## Evolution of number of Airbnb listings - Is Airbnb growing?
 
 To assess how the relevance of Airbnb has evolved over time, it is important to examine the development of listing numbers in Zurich. The following figure illustrates the annual growth in Airbnb listings and provides insight into how strongly the platform has expanded within the city’s accommodation market.
 
@@ -1060,7 +1060,7 @@ The vast majority of reviews are positive (green), while neutral and negative re
 
 Overall, the trend suggests both growing market activity and persistently positive guest experiences over time.
 
-### Reviews analysis maps - Do certain areas get in general better review?
+## Reviews analysis maps - Do certain areas get in general better review?
 
 Below the two maps visualize negative reviews. The left map displays the absolute number of negative reviews, while the right map shows the proportion of negative reviews.
 
@@ -1144,7 +1144,7 @@ The city center is still one of the neighbourhoods with the highest percentage o
 
 Overall, the share of negative reviews is much more informative than the absolute number. Although there is spatial variation in the share of negative reviews, the absolute levels are low, with no neighbourhood exceeding approximately 2.5% negative feedback, suggesting generally high guest satisfaction citywide.
 
-## Mean price and number of stays per neighbourhood maps - How Do Prices and Stays Vary Across Zurich’s Neighbourhoods?
+### Mean price and number of stays per neighbourhood maps - How Do Prices and Stays Vary Across Zurich’s Neighbourhoods?
 
 The visual below displays once the mean price and once the number of stays each per neighbourhood. The higher the value the lighter the coloring of the neighbourhood.
 
@@ -1206,7 +1206,7 @@ The prices tend to be higher the closer the neighbourhood group is to the city c
 
 However, the number of stays per neighbourhoods reveals, that while the city center is the most popular according to number of stays, other neighbourhoods in close proximity also record a lot of bookings and are quite popular among guests.
 
-## Neighbourhood group characteristics - What differences do Airbnbs have in the different neighbourhoods?
+## Neighbourhood group characteristics
 
 While the previous maps highlighted spatial differences in prices and booking activity, it is equally important to understand the structural characteristics of each neighbourhood group. The following comparison provides a broader profile of the Kreise in terms of host activity, listing concentration, pricing, and minimum stay requirements.
 
@@ -1295,11 +1295,12 @@ Kreis 3 and 4 with the popular neighbourhood's have profiles with the most hosts
 
 # Model - Prediction of price - Which factors significantly determine Airbnb prices in Zurich?
 
-## Review vs Prices - Do Airbnbs with more positive reviews tend to have higher prices?
+## Review vs Prices
 
 Prior to estimating the linear model, we conduct a visual inspection of the relationship between review activity and prices. The plots below examine whether listings with more reviews tend to command different prices and whether this pattern varies by room type or sentiment score.
 
-```{r reviews_price, include=FALSE}
+```{r facetting}
+
 # Scatterplot of number of reviews vs log(price), excluding zero prices
 # Adds a linear regression line to show the overall trend
 ggplot(d.merged %>% filter(price > 0), 
@@ -1332,10 +1333,7 @@ ggplot(d.merged, aes(x = number_of_reviews, y = log(price))) +
       size  = 14
     )
   )
-```
 
-
-```{r reviews_price_facetting}
 # Same relationship, but split by sentiment category (bing_score)
 # Shows whether the price–reviews relationship differs by review sentiment
 ggplot(d.merged, aes(x = number_of_reviews, y = log(price))) +
@@ -1358,11 +1356,11 @@ ggplot(d.merged, aes(x = number_of_reviews, y = log(price))) +
 
 ```
 
-The figure shows the relationship between the number of reviews and log price, separated by review sentiment categories: negative (−1), neutral (0), and positive (1). Across all three groups, the relationship appears slightly negative, meaning that listings with more reviews tend to be marginally cheaper on average.
+The plots show a weak negative relationship between the number of reviews and log price: listings with more reviews tend to be slightly cheaper on average, although the effect appears small.
 
-While listings with positive sentiment generally exhibit somewhat higher overall price levels compared to neutral or negative listings, the slope of the relationship between review volume and price remains relatively similar across all sentiment categories. Overall, the number of reviews does not appear to be a strong visual driver of price differences.
+This pattern is broadly similar across room types and sentiment categories. Overall, review volume does not seem to be a strong visual driver of price, which motivates a formal regression analysis to quantify the effect.
 
-## Linear Model - 
+## Linear Model
 
 To formally assess which factors drive Airbnb prices in Zurich, we estimate a linear regression model using log(price) as the dependent variable.
 
