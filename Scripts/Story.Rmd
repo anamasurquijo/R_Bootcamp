@@ -309,8 +309,7 @@ Finally, to improve clarity and avoid ambiguity in the merged dataset, review-re
 ```{r rename,class.source = "fold-show"}
 
 # anti_join to inspect any mismatches
-anti_join(d.listings, d.reviews, by = c("id" = "listing_id")) |>
-  View()
+anti_join(d.listings, d.reviews, by = c("id" = "listing_id"))
 
 # rename different review columns
 d.merged <- d.merged %>% 
