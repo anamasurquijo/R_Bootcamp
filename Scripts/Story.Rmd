@@ -160,9 +160,19 @@ d.listings %>%
   geom_segment(aes(x = 0, xend = pct_missing, # Draw horizontal line from 0 to % missing
                    yend = variable)) + 
   geom_point(size = 3) + # Add point at end of each line
-  labs(title = "Percentage of Missing Values",
-       x = "Missing (%)",
-       y = NULL)
+  labs(
+    title = "Percentage of Missing Values",
+    x = "Missing (%)",
+    y = NULL
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      hjust = 0.5,
+      face  = "bold",
+      size  = 14
+    )
+  )
 
 ```
 
@@ -183,12 +193,21 @@ d.listings %>%
   geom_raster() +                       # Draw a tile for each cell in the dataset
   scale_fill_manual(values = c("FALSE" = "white",
                                "TRUE"  = "red")) +
-  labs(title = "Missing Data Pattern",
-       x = NULL,
-       y = NULL,
-       fill = "Missing") +
-  theme(axis.text.x = element_text(angle = 90)) # Rotate variable names for readability
-
+  labs(
+    title = "Missing Data Pattern",
+    x = NULL,
+    y = NULL,
+    fill = "Missing"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 90),
+    plot.title  = element_text(
+      hjust = 0.5,
+      face  = "bold",
+      size  = 14
+    )
+  )
 ```
 
 The visualization clearly shows, that the missing price observations are mostly not the same Airbnbs as the ones that did not have reviews.
@@ -537,12 +556,13 @@ ggplot(boxplot_data, aes(x = "", y = value)) +
     y = NULL
   ) +
   theme_minimal() +
-  theme(
-    strip.text = element_text(face = "bold"),
-    axis.text.x = element_blank(),
-    axis.ticks.x = element_blank(),
-    plot.title = element_text(hjust = 0.5)
-  )
+theme(
+  strip.text = element_text(face = "bold"),
+  axis.text.x = element_blank(),
+  axis.ticks.x = element_blank(),
+  panel.grid.minor = element_blank(),
+  plot.title = element_text(hjust = 0.5, face = "bold", size = 14)
+)
 
 ```
 
@@ -589,8 +609,13 @@ corrplot(
   number.cex   = 0.6,      # Size of coefficient text
   col          = my_cols, 
   cl.lim       = c(-1, 1), # Fix color scale from -1 to 1          
-  title        = "Correlation Matrix of Airbnb Price Predictors",
   mar          = c(0, 0, 2, 0)
+)
+
+title(
+  main = "Correlation Matrix of Airbnb Price Predictors",
+  font.main = 2,   # bold
+  cex.main  = 1.2  # larger size
 )
 
 ```
@@ -662,7 +687,7 @@ ggplot(
   expand_limits(x = max(room_counts$value) * 1.1) +
   theme_minimal() +
   theme(
-    plot.title = element_text(hjust = 0.5)
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14)
   )
   
 ```
@@ -724,11 +749,13 @@ ggplot(listings_per_host, aes(x = listings_group)) +
                  linetype = statistic),
              linewidth = 1) +
   
-  labs(color = "Statistic",
+  labs(title = "Listings per host",
+       x = "Listings per host",
+       y = "Number of hosts",
+       color = "Statistic",
        linetype = "Statistic") +
-  
-  xlab("Listings per host") +
-  ylab("Number of hosts")
+
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 14))
 
 ```
 
@@ -764,7 +791,14 @@ ggplot(
     x = "Minimum nights",
     y = "Number of listings"
   ) +
-  theme_minimal()
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      hjust = 0.5,
+      face  = "bold",
+      size  = 14
+    )
+  )
 
 ```
 
@@ -893,6 +927,7 @@ Overall, the map confirms that short-term rental intensity varies across Zurich,
 To better understand Airbnb’s role within Zurich’s overall accommodation landscape, it is important to assess how its spatial distribution compares to that of traditional hotels. This helps clarify whether Airbnb primarily complements existing infrastructure or competes directly with it.
 
 ```{r hotels_neighbourhood}
+
 # Check if hotels data already exists
 # Otherwise, download it from OpenStreetMap and save it for future use
 if (file.exists("Data/osm_hotels_zurich.rds")) {
@@ -974,6 +1009,10 @@ ggplot(listings_per_year, aes(x = year, y = n_listings)) +
     title = "Evolution of Airbnb Listings",
     x = "Year",
     y = "Number of Listings"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14)
   )
 
 ```
@@ -1006,6 +1045,9 @@ ggplot(reviews_year,
     title = "Evolution of Reviews Over Time",
     x = "Year",
     y = "Number of Reviews"
+  ) +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14)
   )
 
 ```
@@ -1080,9 +1122,17 @@ p_share <- ggplot(geo_neg) +
   theme_minimal()
 
 # Combine both maps into one figure with a shared overall title
-p_count + p_share + plot_annotation(
-  title = "Negative Airbnb reviews in Zürich by neighbourhood"
-)
+p_count + p_share +
+  plot_annotation(
+    title = "Negative Airbnb reviews in Zürich by neighbourhood",
+    theme = theme(
+      plot.title = element_text(
+        face = "bold",
+        size = 14,
+        hjust = 0.5
+      )
+    )
+  )
 
 ```
 
@@ -1136,7 +1186,17 @@ p_stays <- ggplot(geo_stats) +
   theme_minimal()
 
 # Combine plots
-p_price + p_stays + plot_annotation(title = "Neighbourhoods in Zürich")
+p_price + p_stays +
+  plot_annotation(
+    title = "Neighbourhoods in Zürich",
+    theme = theme(
+      plot.title = element_text(
+        face = "bold",
+        size = 14,
+        hjust = 0.5
+      )
+    )
+  )
 
 ```
 
@@ -1174,7 +1234,11 @@ radar_scaled <- radar_raw %>%
   )
 
 # Set up a 3 x 4 layout for 12 neighbourhood groups
-par(mfrow = c(3, 4), mar = c(1, 1, 3, 1))
+par(
+  mfrow = c(3, 4),
+  mar   = c(1, 1, 3, 1),   # inner margins (per plot)
+  oma   = c(0, 0, 3, 0)    # outer margin (top space for global title)
+)
 
 # Precompute global max and min for the axes (after scaling)
 axis_max <- apply(radar_scaled[, -1], 2, max)
@@ -1206,6 +1270,13 @@ for (g in radar_scaled$neighbourhood_group) {
   )
   title(main = g, cex.main = 1)
 }
+
+mtext(
+  "Radar charts of neighbourhood groups",
+  outer = TRUE,
+  cex   = 1.2,
+  font  = 2
+)
 
 ```
 
@@ -1247,7 +1318,19 @@ ggplot(d.merged, aes(x = number_of_reviews, y = log(price))) +
   geom_point(alpha = 0.2) +
   geom_smooth(method = "lm", se = FALSE) +
   facet_wrap(~ room_type) +              # One panel per room type
-  theme_minimal()
+  theme_minimal() +
+  labs(
+    title = "Reviews vs Log Price by Room Type",
+    x = "Number of Reviews",
+    y = "Log(Price)"
+  ) +
+  theme(
+    plot.title = element_text(
+      hjust = 0.5,
+      face  = "bold",
+      size  = 14
+    )
+  )
 
 # Same relationship, but split by sentiment category (bing_score)
 # Shows whether the price–reviews relationship differs by review sentiment
@@ -1255,7 +1338,19 @@ ggplot(d.merged, aes(x = number_of_reviews, y = log(price))) +
   geom_point(alpha = 0.2) +
   geom_smooth(method = "lm", se = FALSE) +
   facet_wrap(~ factor(bing_score)) +     # One panel per sentiment category
-  theme_minimal()
+  theme_minimal() +
+  labs(
+    title = "Reviews vs Log Price by Sentiment",
+    x = "Number of Reviews",
+    y = "Log(Price)"
+  ) +
+  theme(
+    plot.title = element_text(
+      hjust = 0.5,
+      face  = "bold",
+      size  = 14
+    )
+  )
 
 ```
 
