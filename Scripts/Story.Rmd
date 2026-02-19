@@ -893,10 +893,6 @@ Overall, the map confirms that short-term rental intensity varies across Zurich,
 
 To better understand Airbnb’s role within Zurich’s overall accommodation landscape, it is important to assess how its spatial distribution compares to that of traditional hotels. This helps clarify whether Airbnb primarily complements existing infrastructure or competes directly with it.
 
-```{r 2import_neighbourhoods, include=FALSE}
-neighbourhoods <- st_read("Data/neighbourhoods.geojson")
-```
-
 ```{r hotels_neighbourhood}
 # Check if hotels data already exists
 # Otherwise, download it from OpenStreetMap and save it for future use
@@ -927,7 +923,7 @@ leaflet() %>%
   addTiles() %>% # Base map
   # Add neighbourhood boundaries
   addPolygons(
-    data = neighbourhoods,
+    data = geojson,
     weight = 2,
     fill = 1
   ) %>%
