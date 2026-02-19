@@ -798,7 +798,7 @@ print(n = 53, min_nights)
 The visual below deepens our knowledge of the previous insights regarding minimum nights per stay. It displays the mean minimum nights of all listings per neighbourhood as a bubble map. The bigger the bubble the higher the minimum nights mean value.
 
 ```{r import_neighbourhoods, include=FALSE}
-geojson <- st_read("../Data/neighbourhoods.geojson")
+geojson <- st_read("Data/neighbourhoods.geojson")
 ```
 
 ```{r minimum_nights_neighbourhood}
@@ -894,7 +894,7 @@ Overall, the map confirms that short-term rental intensity varies across Zurich,
 To better understand Airbnb’s role within Zurich’s overall accommodation landscape, it is important to assess how its spatial distribution compares to that of traditional hotels. This helps clarify whether Airbnb primarily complements existing infrastructure or competes directly with it.
 
 ```{r 2import_neighbourhoods, include=FALSE}
-neighbourhoods <- st_read("../Data/neighbourhoods.geojson")
+neighbourhoods <- st_read("Data/neighbourhoods.geojson")
 ```
 
 ```{r hotels_neighbourhood}
