@@ -810,23 +810,6 @@ The frequency declines rapidly up to around 7 minimum nights. Beyond that point,
 
 Overall, the distribution reveals a dominant short-term rental segment characterised by very low minimum stay requirements, alongside a smaller but clearly present group of listings targeting longer stays.
 
-```{r  minimum nights, include=FALSE}
-
-# Calculate the distribution of minimum nights per unique listing,
-# including counts, relative shares, and cumulative shares
-min_nights <- d.merged %>%
-  distinct(id, minimum_nights) %>%
-  count(minimum_nights) %>%
-  arrange(minimum_nights) %>%
-  mutate(
-    share = n / sum(n),
-    cum_share = cumsum(share)
-  )
-
-# Print 53 rows for inspection
-print(n = 53, min_nights)
-
-```
 
 ### Minimum nights per neighbourhood map - Are there spatial differences?
 
