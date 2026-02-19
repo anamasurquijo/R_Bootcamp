@@ -1583,14 +1583,13 @@ Exclusion of non-English reviews: Non-English comments were removed prior to sen
 
 # Use of GenAI
 
-**Tools used**
+**What tools did we use?**
 
--   ChatGPT
--   Gemini
+ We mainly used ChatGPT and Gemini.
 
 **What have you used it for?**
 
-One of our main goals in this project was to use as little GenAI as possible in order to maximize our learning experience. We realized that in the previous semester we relied too heavily on such tools and did not achieve the learning progress we had hoped for. Therefore, we consciously decided to work independently and solve most problems ourselves.
+One of our main goals in this project was to use as little GenAI as possible in order to maximize our learning experience. We realized that in the previous semester we relied too heavily on such tools and did not achieve the learning progress we had hoped for.
 
 Our main resources were the slides from the ILIAS Introduction to R course and the materials provided during the Bootcamp. Additionally, we created a dedicated project space within the GenAI tools to keep our work organized. We uploaded the course slides to these tools so that, whenever we had doubts or wanted to verify our approach, the responses would be aligned with the concepts covered in class.
 
@@ -1607,8 +1606,6 @@ Another important use was improving the structure and clarity of our written ana
 **How do you check correctness of the answer?**
 
 We verified the correctness of GenAI outputs primarily by running the suggested code and evaluating whether the results were reasonable. In addition, we compared explanations and approaches with the course slides and relevant cheat sheets.
-
-By critically reviewing both the logic and the results, we ensured that we fully understood the solutions before incorporating them into our project.
 
 **What did not work?**
 
