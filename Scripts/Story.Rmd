@@ -115,13 +115,13 @@ glimpse(d.listings)
 
 The first impression tells us, that the license columnn might completely be empty. Furthermore, we see that we have:
 
-- <dbl>: Double types, which are numeric values with decimals for continuous numbers.
+- dbl: Double types, which are numeric values with decimals for continuous numbers.
 
-- <chr>: Character type, which are text values (strings).
+- chr: Character type, which are text values (strings).
 
-- <date>: Date type, which is stored in a specific date format.
+- date: Date type, which is stored in a specific date format.
 
-- <lgl>: Logical type, storing TRUE or FALSE values
+- lgl: Logical type, storing TRUE or FALSE values
 
 We convert the variables room_type, neighbourhood, and neighbourhood_group to factors because they represent categorical rather than numerical information. This ensures they are treated as discrete groups in the analysis and allows the model to estimate category-specific effects appropriately.
 
