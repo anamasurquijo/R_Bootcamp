@@ -12,3 +12,5 @@ We examine distribution patterns, pricing determinants, host behaviour, and gues
 - `Data`: Raw datasets and spatial files  
 - `Models`: Saved model objects (.rds)  
 - `Scripts`: Main analysis file and rendered report  
+
+*To run the Rmd file please set the working directory to the Scripts Folder.* Else you need to adapt the paths for importing and saving files.
