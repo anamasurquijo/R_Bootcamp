@@ -62,23 +62,22 @@ This analysis is conducted for a hypothetical client, the City of Zurich, with t
 
 ## Objectives and Research Questions
 
-The main objective of this analysis is to support the City of Zurich in evaluating whether, and where, regulatory measures on Airbnb rentals, especially for short-term ones, may be appropriate.
+The objective of this study is to support the City of Zurich in evaluating whether, and where, regulatory measures on short-term Airbnb rentals may be appropriate.
 
-Specifically, the study addresses the following research questions:
+The analysis addresses:
 
 **RQ1:** How are Airbnb listings distributed across Zurich neighbourhoods, and which areas show the highest concentration?
 
-**RQ2:** Are Airbnb listings more prevalent in certain neighbourhoods, suggesting that short-term rentals may complement local accommodation needs rather than displace long-term housing?
+**RQ2:** In which neighbourhoods does Airbnb complement existing hotel infrastructure, and where might it compete with hotels or reduce long-term housing availability?
 
-**RQ3:** To what extent is Airbnb activity in Zurich driven by a small number of hosts offering multiple listings, indicating a more commercial use of residential properties?
+**RQ3:** To what extent is Airbnb activity driven by hosts offering multiple listings, indicating more commercial use of residential properties?
 
-**RQ4:** Which neighbourhoods exhibit high short-term rental intensity, as reflected by listing availability throughout the year and minimum stay requirements?
+**RQ4:** Which neighbourhoods exhibit high short-term rental intensity, as reflected by availability and minimum stay requirements?
 
-**RQ5:** Do guest reviews suggest that Airbnb listings in Zurich provide positive tourist experiences, and does this vary across neighbourhoods or host types?
+**RQ5:** Do guest reviews indicate positive tourist experiences, and does this vary across neighbourhoods or host types?
 
-**RQ6:** Based on listing concentration, host behaviour, and usage intensity, which neighbourhoods would be most affected by potential regulatory measures on short-term rentals?
+**RQ6:** Based on listing concentration, host behaviour, rental intensity, and pricing patterns, which neighbourhoods would be most affected by potential regulatory measures?
 
-Together, these questions provide a structured framework for assessing the role of Airbnb in Zurich and for identifying areas where targeted regulation may be most relevant.
 
 # Dataset
 
@@ -112,13 +111,31 @@ d.listings <- read_csv("../Data/listings.csv")
 glimpse(d.listings)
 ```
 
-**Data Type Transformations** The first impression tells us, that the license columnn might completely be empty. Furthermore, we see that we have: - <dbl>: Double types, which are numeric values with decimals for continuous numbers. - <chr>: Character type, which are text values (strings). - <date>: Date type, which is stored in a specific date format. - <lgl>:Logical type, storing TRUE or FALSE values
+**Data Type Transformations**
+
+The first impression tells us, that the license columnn might completely be empty. Furthermore, we see that we have:
+
+-   *<dbl>*: Double types, which are numeric values with decimals for continuous numbers.
+
+-   *<chr>*: Character type, which are text values (strings).
+
+-   *<date>*: Date type, which is stored in a specific date format.
+
+-   *<lgl>*:Logical type, storing TRUE or FALSE values
 
 We convert the variables room_type, neighbourhood, and neighbourhood_group to factors because they represent categorical rather than numerical information. This ensures they are treated as discrete groups in the analysis and allows the model to estimate category-specific effects appropriately.
 
 The variables id and host_id are converted to character because they serve as unique identifiers and do not carry numerical meaning.
 
-**Missing Data** After converting the required types, the amount of missing data is examined by - calculating the absolute number of missing values in each column - visualizing the proportion of missing values relative to the total number of observations - visualizing the missing patterns to understand if missing data is systematic.
+**Missing Data**
+
+After converting the required types, the amount of missing data is examined by:
+
+-   calculating the absolute number of missing values in each column
+
+-   visualizing the proportion of missing values relative to the total number of observations
+
+-   visualizing the missing patterns to understand if missing data is systematic.
 
 This provides an overview of data completeness and helps identify variables that may require cleaning or removal.
 
@@ -145,7 +162,7 @@ d.listings %>%
 
 ```
 
-Based on this inspection, the column license will be removed from the listings dataset, as our assumption that it only contained missing values was correct. For reviews_per_month and last_review the same amount of observations are missing, which makes us assume, that these will probably be from the same airbnbs, that probably never had a review at all. The missing price is also close to the reviews missing. But lets look at how much % these missing observations actually are:
+Based on this inspection, the column license will be removed from the listings dataset, as our assumption that it only contained missing values was correct. For reviews_per_month and last_review the same amount of observations are missing, which makes us assume, that these will probably be from the same Airbnbs, that probably never had a review at all. The missing price is also close to the reviews missing. But lets look at how much % these missing observations actually are:
 
 ```{r missing_percentage}
 
@@ -626,7 +643,7 @@ Overall, aside from the review-related measures, the correlation matrix suggests
 
 To answer the research questions, the data are systematically analysed in this chapter. We present a series of visualisations to highlight key patterns and insights, and we discuss their implications for the City of Zurich. All analyses are based either on the merged dataset described in the previous chapter or in some cases on the listings_with_sentiment dataset.
 
-For most visualisations, temporary working datasets are created. This approach ensures that the original dataset remains unchanged and transparent, while allowing targeted data transformations tailored to each specific analysis.
+For most visualizations, temporary working datasets are created. This approach ensures that the original dataset remains unchanged and transparent, while allowing targeted data transformations tailored to each specific analysis.
 
 ## Number of listings per room type
 **What type of accomodation is Airbnb offering?**
@@ -1027,7 +1044,7 @@ The figure shows a strong upward trend in the number of Airbnb listings in Zuric
 ## Evolution of reviews
 **How happy are guests with Airbnbs and how have the ratings evolved over time?**
 
-Not only the Airbnb listings, also the reviews evolution is important to analyze, in order to see how happy guests are and if this is improving or getting worse.
+Not only the Airbnb listings, also the reviews evolution is important to analyze, in order to see how happy guests are and if this is improving or getting worse with the time.
 
 ```{r reviews_evolution}
 
@@ -1573,21 +1590,15 @@ Overall, there is no evidence that adding polynomial (nonlinear) terms improves 
 
 # Conclusions
 
-This analysis examined the role of Airbnb across Zurich’s neighbourhoods with the objective of supporting the City of Zurich in evaluating whether targeted regulation of short-term rentals may be appropriate.
+This analysis shows that Airbnb plays a differentiated role across Zurich’s neighbourhoods.
 
-Regarding RQ1 and RQ2, Airbnb listings are clearly concentrated in central neighbourhoods such as City, Lindenhof, Enge, Langstrasse, and Werd. These areas show both high listing density and higher prices. However, Airbnb is also present in peripheral neighbourhoods where hotel infrastructure is limited. This suggests that Airbnb partly complements the traditional accommodation sector in underserved areas, while in central districts it may compete more directly with hotels and potentially intensify housing pressure.
+Listings are strongly concentrated in central districts, where prices are higher and rental intensity is strongest. In these areas, Airbnb is more likely to compete with hotels and may contribute to housing market pressure. In contrast, in peripheral neighbourhoods with limited hotel presence, Airbnb appears to complement the accommodation sector without the same degree of housing displacement risk.
 
-With respect to RQ3, the distribution of listings per host indicates that the majority of hosts operate only one listing. This suggests that Zurich’s Airbnb market is still largely driven by individual hosts. Nevertheless, a smaller group of multi-listing hosts contributes disproportionately to total supply, indicating the presence of more commercial activity in certain areas.
+The majority of hosts operate only one listing, suggesting that the market is largely driven by individuals. However, a smaller group of multi-listing hosts contributes disproportionately to supply, indicating commercial activity in specific areas.
 
-Concerning RQ4, the vast majority of listings require very short minimum stays (1–2 nights), and availability varies substantially across listings. This indicates a strong short-term rental orientation, especially in central neighbourhoods. Areas with high availability and multiple listings per host may therefore be more exposed to regulatory measures such as annual rental caps.
+Short minimum stay requirements and high availability confirm a strong short-term orientation, particularly in central neighbourhoods. Guest satisfaction is consistently high across the city, and more positive review sentiment is associated with higher prices.
 
-In terms of RQ5, guest satisfaction appears consistently high. The proportion of negative reviews remains very low across all neighbourhoods (generally below 2.5%), and sentiment analysis confirms that reviews are overwhelmingly positive. There is strong evidence that more positive review sentiment is associated with higher prices, indicating that quality and reputation matter in Zurich’s Airbnb market.
-
-Finally, addressing RQ6, the regression model shows that room type, neighbourhood, and review sentiment are the most important determinants of price. Central neighbourhoods command substantial price premiums relative to the reference area, and entire apartments are significantly more expensive than private or shared rooms. The model explains approximately 28% of the variation in prices, indicating moderate explanatory power. While statistically robust, a considerable share of price variation is driven by unobserved characteristics such as size, amenities, or micro-location.
-
-Overall, the results suggest that Airbnb in Zurich is not a uniform phenomenon. In central neighbourhoods with high listing density and strong price premiums, short-term rentals may exert more pressure on the housing market and could be priority areas for regulatory attention. In contrast, in peripheral neighbourhoods with limited hotel presence, Airbnb may expand accommodation capacity without comparable housing displacement effects.
-
-For the City of Zurich, this implies that broad, city-wide regulation may be less effective than targeted, neighbourhood-specific measures that account for listing concentration, host behaviour, and rental intensity.
+Overall, the results indicate that Airbnb in Zurich is not a uniform phenomenon. Central neighbourhoods with high listing density and rental intensity would likely be most affected by regulatory measures. Therefore, targeted, neighbourhood-specific policies may be more appropriate than broad city-wide restrictions.
 
 # Potential Limitations
 
