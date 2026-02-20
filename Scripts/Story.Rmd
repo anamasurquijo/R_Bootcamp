@@ -1087,7 +1087,7 @@ Overall, the trend suggests both growing market activity and persistently positi
 
 Below the two maps visualize negative reviews. The left map displays the absolute number of negative reviews, while the right map shows the proportion of negative reviews.
 
-```{r reviews_maps}
+```{r reviews_maps, fig.width=12, fig.height=6}
 
 # Count number of negative reviews per neighbourhood
 neg_stats <- d.merged %>%
@@ -1129,7 +1129,12 @@ p_count <- ggplot(geo_neg) +
     title = "Number of negative reviews per neighbourhood",
     subtitle = "Lighter areas have more negative reviews"
   ) +
-  theme_minimal()
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 11, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 10, hjust = 0.5),
+    plot.margin = margin(5, 10, 5, 10)
+  )
 
 # Map 2: share of negative reviews
 p_share <- ggplot(geo_neg) +
@@ -1144,7 +1149,12 @@ p_share <- ggplot(geo_neg) +
     title = "Share of negative reviews per neighbourhood",
     subtitle = "Fraction of reviews with bing_score = -1"
   ) +
-  theme_minimal()
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 11, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 10, hjust = 0.5),
+    plot.margin = margin(5, 10, 5, 10)
+  )
 
 # Combine both maps into one figure with a shared overall title
 p_count + p_share +
@@ -1172,7 +1182,7 @@ Overall, the share of negative reviews is much more informative than the absolut
 
 The visual below displays once the mean price and once the number of stays each per neighbourhood. The higher the value the lighter the coloring of the neighbourhood.
 
-```{r price_number_stays_neighbourhood}
+```{r price_number_stays_neighbourhood, fig.width=12, fig.height=6}
 
 listings <- d.merged %>%
   distinct(id, .keep_all = TRUE)
@@ -1199,7 +1209,11 @@ p_price <- ggplot(geo_stats) +
     title = "Mean price by neighbourhood",
     fill  = "Mean price"
   ) +
-  theme_minimal()
+  theme_minimal() +
+  theme(
+    plot.title   = element_text(size = 11, face = "bold", hjust = 0.5),
+    plot.margin  = margin(5, 10, 5, 10)
+  )
 
 # Number of stays map (neighbourhood)
 p_stays <- ggplot(geo_stats) +
@@ -1209,7 +1223,11 @@ p_stays <- ggplot(geo_stats) +
     title = "Number of stays (reviews) by neighbourhood",
     fill  = "Total stays"
   ) +
-  theme_minimal()
+  theme_minimal() +
+  theme(
+    plot.title   = element_text(size = 11, face = "bold", hjust = 0.5),
+    plot.margin  = margin(5, 10, 5, 10)
+  )
 
 # Combine plots
 p_price + p_stays +
